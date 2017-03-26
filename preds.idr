@@ -7,7 +7,7 @@ data BOE : Nat -> Nat -> Type where
   BT : BOE k v -> BOE (S k) (S v)
 
 boeRContra : (BOE x y -> Void) -> BOE (S x) (S y) -> Void
-boeRContra contra (BT x) impossible
+boeRContra contra (BT x) = contra x
 
 boeZContra : BOE Z (S y) -> Void
 boeZContra B0 impossible
@@ -58,61 +58,65 @@ howMany x (y::ys) = case decEq x y of
 eq1Type : Vect n Nat -> Nat -> Type
 eq1Type a x = (howMany x a = 1)
 
-data ExactlyOne : (a : Vect n Nat) -> (b : Vect k Nat) -> Type where
-  EO : ForEvery a (eq1Type b) -> ExactlyOne a b
+-- data ExactlyOne : (a : Vect n Nat) -> (b : Vect k Nat) -> Type where
+--   EO : ForEvery a (eq1Type b) -> ExactlyOne a b
+--
+-- exactlyOne1contra : (howMany x b = 1 -> Void) -> ExactlyOne (x :: xs) b -> Void
+-- exactlyOne1contra contra (EO x) impossible
+--
+-- exactlyOneRcontra : (ExactlyOne xs b -> Void) -> ExactlyOne (x :: xs) b -> Void
+-- exactlyOneRcontra contra (EO x) impossible
+--
+-- isExactlyOne : (a : Vect n Nat) -> (b : Vect k Nat) -> Dec (ExactlyOne a b)
+-- isExactlyOne {n = Z} [] b = Yes $ EO F0
+-- isExactlyOne {n = S k} (x::xs) b = case decEq (howMany x b) 1 of
+--   (Yes deprf) => case isExactlyOne xs b of
+--     (Yes (EO fe)) => Yes $ EO $ FR x deprf fe
+--     (No contra) => No $ exactlyOneRcontra contra
+--   (No contra) => No $ exactlyOne1contra contra
+--
+-- data Distinct : (a : Vect n Nat) -> Type where
+--   DD : ExactlyOne a a -> Distinct a
+--
+-- isDistinctContra : (ExactlyOne a a -> Void) -> Distinct a -> Void
+-- isDistinctContra contra (DD x) impossible
+--
+-- isDistinct : (a : Vect n Nat) -> Dec (Distinct a)
+-- isDistinct xs = case isExactlyOne xs xs of
+--   Yes prf => Yes $ DD prf
+--   No contra => No $ isDistinctContra contra
 
-exactlyOne1contra : (howMany x b = 1 -> Void) -> ExactlyOne (x :: xs) b -> Void
-exactlyOne1contra contra (EO x) impossible
-
-exactlyOneRcontra : (ExactlyOne xs b -> Void) -> ExactlyOne (x :: xs) b -> Void
-exactlyOneRcontra contra (EO x) impossible
-
-isExactlyOne : (a : Vect n Nat) -> (b : Vect k Nat) -> Dec (ExactlyOne a b)
-isExactlyOne {n = Z} [] b = Yes $ EO F0
-isExactlyOne {n = S k} (x::xs) b = case decEq (howMany x b) 1 of
-  (Yes deprf) => case isExactlyOne xs b of
-    (Yes (EO fe)) => Yes $ EO $ FR x deprf fe
-    (No contra) => No $ exactlyOneRcontra contra
-  (No contra) => No $ exactlyOne1contra contra
-
-data Distinct : (a : Vect n Nat) -> Type where
-  DD : ExactlyOne a a -> Distinct a
-
-isDistinctContra : (ExactlyOne a a -> Void) -> Distinct a -> Void
-isDistinctContra contra (DD x) impossible
-
-isDistinct : (a : Vect n Nat) -> Dec (Distinct a)
-isDistinct xs = case isExactlyOne xs xs of
-  Yes prf => Yes $ DD prf
-  No contra => No $ isDistinctContra contra
-
-data Subsequence : (a : Vect j Nat) -> (b : Vect k Nat) -> Type where
-  SQ0 : Subsequence [] xs
-  SQHere : Subsequence a b -> Subsequence (x :: a) (x :: b)
-  SQThere : Subsequence a b -> Subsequence a (x :: b)
-
-sqHereContra : (Subsequence a b -> Void) -> Subsequence (x :: a) (x :: b) -> Void
-sqHereContra f (SQHere x) = f x
-sqHereContra f (SQThere x) impossible
-
-sqThereContra : (Subsequence (x :: a) b -> Void) -> Subsequence (x :: a) (y :: b) -> Void
-sqThereContra f (SQHere x) impossible
-sqThereContra f (SQThere x) = f x
-
-sq0Contra : Subsequence (x :: a) [] -> Void
-sq0Contra s impossible
-
-isSubsequence : (a : Vect j Nat) -> (b : Vect k Nat) -> Dec (Subsequence a b)
-isSubsequence {j = Z} {k = x} [] b = Yes SQ0
-isSubsequence {j = S x} {k = Z} (a :: as) [] = No sq0Contra
-isSubsequence {j = S j'} {k = S k'} (x :: xs) (y :: ys) =
-  case decEq x y of
-    Yes deprf => case isSubsequence xs ys of
-      Yes sqprf => Yes $ rewrite deprf in SQHere sqprf
-      No contra => No $ rewrite deprf in sqHereContra contra
-    No contra1 => case isSubsequence (x :: xs) ys of
-      Yes sqprf => Yes $ SQThere sqprf
-      No contra => No $ sqThereContra contra
+-- data Subsequence : (a : Vect j Nat) -> (b : Vect k Nat) -> Type where
+--   SQ0 : Subsequence [] xs
+--   SQHere : Subsequence a b -> Subsequence (x :: a) (x :: b)
+--   SQThere : Subsequence a b -> Subsequence a (x :: b)
+--
+-- sqThereToHere : Subsequence (x :: a) b -> Subsequence a b
+-- sqThereToHere x = ?sqThereToHere_rhs
+--
+--
+-- sqHereContra : (Subsequence a b -> Void) -> Subsequence (x :: a) (x :: b) -> Void
+-- sqHereContra {a = a} {b = b} f (SQHere x) = f x
+-- sqHereContra {a = a} {b = (y :: xs)} f (SQThere x) = ?hsas
+--
+-- sqThereContra : (Subsequence (x :: a) b -> Void) -> Subsequence (x :: a) (y :: b) -> Void
+-- sqThereContra f (SQHere x) impossible
+-- sqThereContra f (SQThere x) = f x
+--
+-- sq0Contra : Subsequence (x :: a) [] -> Void
+-- sq0Contra s impossible
+--
+-- isSubsequence : (a : Vect j Nat) -> (b : Vect k Nat) -> Dec (Subsequence a b)
+-- isSubsequence {j = Z} {k = x} [] b = Yes SQ0
+-- isSubsequence {j = S x} {k = Z} (a :: as) [] = No sq0Contra
+-- isSubsequence {j = S j'} {k = S k'} (x :: xs) (y :: ys) =
+--   case decEq x y of
+--     Yes deprf => case isSubsequence xs ys of
+--       Yes sqprf => Yes $ rewrite deprf in SQHere sqprf
+--       No contra => No $ rewrite deprf in sqHereContra contra
+--     No contra1 => case isSubsequence (x :: xs) ys of
+--       Yes sqprf => Yes $ SQThere sqprf
+--       No contra => No $ sqThereContra contra
 
 data BiggerThanFirst : (x : Nat) -> (v : Vect n Nat) -> Type where
   BF0 : BiggerThanFirst x []
@@ -133,10 +137,10 @@ data Sorted : (v : Vect n Nat) -> Type where
   SorR : Sorted (x :: xs) -> BOE y x -> Sorted (y :: x :: xs)
 
 sortedContraR : (Sorted xs -> Void) -> Sorted (x :: xs) -> Void
-sortedContraR contra (SorR x y) impossible
+sortedContraR contra (SorR x y) = contra x
 
 sortedContra0 : (BOE y x -> Void) -> Sorted (y :: x :: xs) -> Void
-sortedContra0 contra (SorR x y) impossible
+sortedContra0 contra (SorR x y) = contra y
 
 isSorted : (v : Vect n Nat) -> Dec (Sorted v)
 isSorted {n = Z} [] = Yes Sor0
