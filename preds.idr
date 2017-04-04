@@ -44,6 +44,19 @@ data Odd : Nat -> Type where
   O0 : Odd Z
   OR : Odd k -> Odd (S (S k))
 
+oddZContra : Odd (S Z) -> Void
+oddZContra x impossible
+
+oddSContra : (Odd x -> Void) -> Odd (S (S x)) -> Void
+oddSContra f (OR x) = f x
+
+isOdd : (x : Nat) -> Dec (Odd x)
+isOdd Z = Yes O0
+isOdd (S Z) = No oddZContra
+isOdd (S (S k)) = case isOdd k of
+  (Yes prf) => Yes $ OR prf 
+  (No contra) => No $ oddSContra contra
+
 test' : ForEvery [2, 4] Odd
 test' = F0 |>
   FR 4 (OR O0 |> OR) |>
@@ -57,66 +70,6 @@ howMany x (y::ys) = case decEq x y of
 
 eq1Type : Vect n Nat -> Nat -> Type
 eq1Type a x = (howMany x a = 1)
-
--- data ExactlyOne : (a : Vect n Nat) -> (b : Vect k Nat) -> Type where
---   EO : ForEvery a (eq1Type b) -> ExactlyOne a b
---
--- exactlyOne1contra : (howMany x b = 1 -> Void) -> ExactlyOne (x :: xs) b -> Void
--- exactlyOne1contra contra (EO x) impossible
---
--- exactlyOneRcontra : (ExactlyOne xs b -> Void) -> ExactlyOne (x :: xs) b -> Void
--- exactlyOneRcontra contra (EO x) impossible
---
--- isExactlyOne : (a : Vect n Nat) -> (b : Vect k Nat) -> Dec (ExactlyOne a b)
--- isExactlyOne {n = Z} [] b = Yes $ EO F0
--- isExactlyOne {n = S k} (x::xs) b = case decEq (howMany x b) 1 of
---   (Yes deprf) => case isExactlyOne xs b of
---     (Yes (EO fe)) => Yes $ EO $ FR x deprf fe
---     (No contra) => No $ exactlyOneRcontra contra
---   (No contra) => No $ exactlyOne1contra contra
---
--- data Distinct : (a : Vect n Nat) -> Type where
---   DD : ExactlyOne a a -> Distinct a
---
--- isDistinctContra : (ExactlyOne a a -> Void) -> Distinct a -> Void
--- isDistinctContra contra (DD x) impossible
---
--- isDistinct : (a : Vect n Nat) -> Dec (Distinct a)
--- isDistinct xs = case isExactlyOne xs xs of
---   Yes prf => Yes $ DD prf
---   No contra => No $ isDistinctContra contra
-
--- data Subsequence : (a : Vect j Nat) -> (b : Vect k Nat) -> Type where
---   SQ0 : Subsequence [] xs
---   SQHere : Subsequence a b -> Subsequence (x :: a) (x :: b)
---   SQThere : Subsequence a b -> Subsequence a (x :: b)
---
--- sqThereToHere : Subsequence (x :: a) b -> Subsequence a b
--- sqThereToHere x = ?sqThereToHere_rhs
---
---
--- sqHereContra : (Subsequence a b -> Void) -> Subsequence (x :: a) (x :: b) -> Void
--- sqHereContra {a = a} {b = b} f (SQHere x) = f x
--- sqHereContra {a = a} {b = (y :: xs)} f (SQThere x) = ?hsas
---
--- sqThereContra : (Subsequence (x :: a) b -> Void) -> Subsequence (x :: a) (y :: b) -> Void
--- sqThereContra f (SQHere x) impossible
--- sqThereContra f (SQThere x) = f x
---
--- sq0Contra : Subsequence (x :: a) [] -> Void
--- sq0Contra s impossible
---
--- isSubsequence : (a : Vect j Nat) -> (b : Vect k Nat) -> Dec (Subsequence a b)
--- isSubsequence {j = Z} {k = x} [] b = Yes SQ0
--- isSubsequence {j = S x} {k = Z} (a :: as) [] = No sq0Contra
--- isSubsequence {j = S j'} {k = S k'} (x :: xs) (y :: ys) =
---   case decEq x y of
---     Yes deprf => case isSubsequence xs ys of
---       Yes sqprf => Yes $ rewrite deprf in SQHere sqprf
---       No contra => No $ rewrite deprf in sqHereContra contra
---     No contra1 => case isSubsequence (x :: xs) ys of
---       Yes sqprf => Yes $ SQThere sqprf
---       No contra => No $ sqThereContra contra
 
 data BiggerThanFirst : (x : Nat) -> (v : Vect n Nat) -> Type where
   BF0 : BiggerThanFirst x []
@@ -309,20 +262,133 @@ selectionSort {n = S (S k)} (x :: y :: xs) =
   in
     (m :: sorteda' ** (rewrite prf in per', sortedBTA sor $ btaSubset bta s1))
 
+-- equalPlusZeroRight : (x : Nat) -> x = x + 0
+
+prfNeeded' : (x : a) -> (xs : Vect n a) -> (ys : Vect j a) -> (zs : Vect i a) -> (ys ++ zs = xs) -> x :: ys ++ zs = x :: xs 
+prfNeeded' x (ys ++ zs) ys zs Refl = Refl
+  
+vectNilLeftNeutral' : (xs : Vect n a) -> xs ++ [] = xs
+vectNilLeftNeutral' [] = Refl 
+vectNilLeftNeutral' (x :: xs) = 
+  let prf = vectNilLeftNeutral' xs in 
+  prfNeeded' x xs xs [] prf
+
+
+prfNeeded : (x : a) -> (xs : Vect n a) -> (ys : Vect j a) -> (zs : Vect i a) -> (xs = ys ++ zs) -> x :: xs = x :: ys ++ zs
+prfNeeded x (ys ++ zs) ys zs Refl = Refl
+  
+vectNilLeftNeutral : (xs : Vect n a) -> xs = xs ++ []
+vectNilLeftNeutral [] = Refl 
+vectNilLeftNeutral (x :: xs) = 
+  let prf = vectNilLeftNeutral xs in 
+  prfNeeded x xs xs [] prf
+
+convertPer : Permutation a b -> Permutation (a ++ []) (b ++ [])
+convertPer {a} {b} (Per x y) = Per (rewrite vectNilLeftNeutral' a in (rewrite vectNilLeftNeutral' b in x)) (rewrite vectNilLeftNeutral' a in (rewrite vectNilLeftNeutral' b in y))
+
+properRemove : (v : Vect (S n) Nat) -> Elem x v -> (v' : Vect n Nat ** i : Nat ** vi : VectIndex v' i ** WithoutOne v' v x vi) 
+properRemove (x :: xs) Here = (xs ** Z ** BHere ** WHere)
+properRemove (y :: []) (There later) impossible
+properRemove (y :: (x :: xs)) (There later) = 
+  let (xs' ** i ** vi ** wo) = properRemove (x :: xs) later 
+  in
+  (y :: xs' ** S i ** BThere vi ** WThere wo)
+
+
+-- removeTheres : Subset (a :: as) (a :: bs) -> Subset as bs
+-- removeTheres (SBR el x) = ?removeTheres_rhs_1
+
+-- removeFromSubset : (b' : Vect n Nat) -> (b : Vect (S n) Nat) -> (v : Nat) -> WithoutOne b' b v vi -> Subset (v :: a) b -> Subset a b'
+-- -- removeFromSubset {v = v} {a = a} {b = (v :: b2)} {b' = b2} sub@(SBR el x) wo@WHere = 
+-- --   let sub' = woSubset wo in 
+-- --   ?sadsssasd
+-- -- removeFromSubset {b = (y :: b)} {b' = (y :: a)} (SBR el x) (WThere z) = ?removeFromSubset_rhs_3
+-- -- removeFromSubset {a=a} {b=(v :: b2)} {b'=b2} v wo@WHere (SBR el x) = 
+-- --   let sub' = woSubset wo 
+-- --   in ?removeFromSubset_rhs_1
+-- -- removeFromSubset {a=a} {b=(y :: ys)} {b'=(y :: xs)} v (WThere z) (SBR el x) = ?removeFromSubset_rhs_2
+-- -- removeFromSubset b1 (v :: b1) v WHere (SBR Here x) with (_)
+-- --   removeFromSubset b1 (v :: b1) v WHere (SBR Here x) | with_pat = ?removeFromSubset_rhs_1_rhs
+-- -- removeFromSubset b1 (v :: b1) v sub@WHere (SBR (There later) x) = ?hole
+-- -- removeFromSubset (x :: a) (x :: b) v (WThere z) y = ?removeFromSubset_rhs_2
+-- removeFromSubset b1 b v x y with (x)
+--   removeFromSubset b1 (v :: b1) v x (SBR el y) | WHere = 
+--     let sub' = woSubset x in
+--     ?removeFromSubset_rhs_rhs_1
+--   removeFromSubset (z :: a) (z :: xs) v x y | (WThere w) = ?removeFromSubset_rhs_rhs_2
+
+removeFromPermutation : Permutation (x :: xs) ys -> WithoutOne ys' ys x vi -> Permutation xs ys'
+removeFromPermutation {xs = xs} {ys = (z :: a)} {ys' = ys2} (Per (SBR el1 x) (SBR el2 w)) y with (y)
+  removeFromPermutation {xs = xs} {ys = (x1 :: a)} {ys' = a} (Per (SBR el1 x) (SBR el2 w)) y | WHere = ?holee_2_rhs_1
+  removeFromPermutation {xs = xs} {ys = (z :: a)} {ys' = (z :: ys)} (Per (SBR el1 x) (SBR el2 w)) y | (WThere s) = ?holee_2_rhs_2
+
 merge' : (v1 : Vect n Nat) -> Permutation v1 a1 -> Sorted v1 ->
   (v2 : Vect j Nat) -> Permutation v2 a2 -> Sorted v2 ->
   (v3 : Vect (n + j) Nat ** (Permutation v3 (a1 ++ a2), Sorted v3))
-merge' [] (Per x w) y v2 z x1 = ?merge'_rhs_3
-merge' (w :: xs) x y v2 z x1 = ?merge'_rhs_2
+-- merge' [] x y [] z x1 = ([] ** (Per SB0 SB0, Sor0))
+-- merge' [] x y (w :: xs) z x1 = ?merge_rhs_4
+-- merge' (w :: xs) x y [] z x1 = ?merge_rhs_3
+-- merge' (w :: xs) x y (s :: ys) z x1 = ?merge_rhs_4
+merge' {a1 = []} {a2 = a2} [] x y v2 z x1 = (v2 ** (z, x1))
+merge' {a1 = a1} {a2 = []} {n} v1 x y [] z x1 = 
+  ((v1 ++ []) ** (convertPer x, rewrite vectNilLeftNeutral' v1 in y))
+merge' {a1 = w :: []} {a2 = (s :: [])} (w :: []) (Per (SBR Here SB0) (SBR Here SB0)) Sor1 (s :: []) (Per (SBR Here SB0) (SBR Here SB0)) Sor1 =
+  case isBOE w s of 
+    (Yes prf) => 
+      (w :: s :: [] ** (Per (SBR Here (SBR (There Here) SB0)) (SBR Here (SBR (There Here) SB0)), SorR Sor1 prf))
+    (No contra) =>  
+      (s :: w :: [] ** (Per (SBR (There Here) (SBR Here SB0)) (SBR (There Here) (SBR Here SB0)), SorR Sor1 (boeFromContra contra)))
+
+-- merge' {a1 = w :: []} {a2 = (g :: gs)} (w :: []) (Per (SBR Here SB0) (SBR Here SB0)) Sor1 (s :: (x :: xs)) (Per sub1 sub2) sor@(SorR y t) = 
+--   case isBOE w s of 
+--     (Yes prf) => 
+--       (w :: s :: x :: xs ** (Per (SBR Here (addThere sub1)) (SBR Here (addThere sub2)), SorR sor prf))
+--     (No contra) => 
+--       let prf = boeFromContra contra
+--       in
+--       ?dasds
+
+-- merge' {a1 = (t :: zs)} {a2 = (g :: gs)} (w :: (y :: ws)) per@(Per sub1@(SBR el x) sub2@(SBR el' x')) (SorR u v) (s :: ys) z x1 = 
+--   case isBOE w s of 
+--     (Yes prf) => 
+--       let
+--       (a1' ** i ** vi ** wo) = properRemove (t :: zs) el 
+--       a = merge' {a1 = a1'} (y :: ws) ?asdas u (s :: ys) z x1 in
+--       ?sdsd
+--     (No contra) => ?ddsd_2
+
+-- data Perm : (v : Vect n Nat) -> Type where 
+--   Permu : 
+data Subsequence : Vect n Nat -> Vect k Nat -> Type where
+  Sub0 : Subsequence [] a
+  SubHere : Subsequence xs ys -> Subsequence (x :: xs) (x :: ys)
+  SubThere : Subsequence xs ys -> Subsequence xs (y :: ys)
+
+data PerFromSubsequence : Vect n Nat -> Vect n Nat -> Type where 
+  PerFS : Subsequence a b -> Subsequence b a -> PerFromSubsequence a b
+
+ownSubsequence : (v : Vect n Nat) -> Subsequence v v
+ownSubsequence [] = Sub0
+ownSubsequence (x :: xs) = SubHere $ ownSubsequence xs
+
+subsequenceCons : (sub1 : Subsequence a b) -> (sub2 : Subsequence b c) -> Subsequence a c 
+subsequenceCons {a = []} {b = b} {c = c} Sub0 sub2 = Sub0
+subsequenceCons {a = (x :: xs)} {b = (x :: ys)} {c = c} (SubHere y) sub2 with (sub2)
+  subsequenceCons {a = (x :: xs)} {b = (x :: ys)} {c = (x :: zs)} (SubHere y) sub2 | (SubHere z) = SubHere $ subsequenceCons y z
+  subsequenceCons {a = (x :: xs)} {b = (x :: ys)} {c = (z :: zs)} (SubHere y) sub2 | (SubThere w) = SubThere $ subsequenceCons (SubHere y) w
+subsequenceCons {a = a} {b = (y :: ys)} {c = c} (SubThere x) sub2 with (sub2)
+  subsequenceCons {a = a} {b = (y :: ys)} {c = (y :: xs)} (SubThere x) sub2 | (SubHere z) = SubThere $ subsequenceCons x z
+  subsequenceCons {a = a} {b = (y :: ys)} {c = (z :: xs)} (SubThere x) sub2 | (SubThere w) = SubThere $ subsequenceCons (SubThere x) w 
 
 
-mergeSort : (a : Vect n Nat) -> (v : Vect n Nat ** (Permutation v a, Sorted v))
-mergeSort a with (splitRec a)
-  mergeSort [] | SplitRecNil = ([] ** (Per SB0 SB0, Sor0))
-  mergeSort [x] | SplitRecOne = ([x] ** (Per (SBR Here SB0) (SBR Here SB0), Sor1))
-  mergeSort (xs ++ ys) | (SplitRecPair lrec rrec) =
-    let
-      (v1 ** (per1, sor1)) = mergeSort xs
-      (v2 ** (per2, sor2)) = mergeSort ys
-    in
-      merge' v1 per1 sor1 v2 per2 sor2
+-- mergeSort : (a : Vect n Nat) -> (v : Vect n Nat ** (PerFromSubsequence v a, Sorted v))
+-- mergeSort a with (splitRec a)
+--   mergeSort [] | SplitRecNil = ([] ** (Per SB0 SB0, Sor0))
+--   mergeSort [x] | SplitRecOne = ([x] ** (Per (SBR Here SB0) (SBR Here SB0), Sor1))
+--   mergeSort (xs ++ ys) | (SplitRecPair lrec rrec) =
+--     let
+--       (v1 ** (per1, sor1)) = mergeSort xs
+--       (v2 ** (per2, sor2)) = mergeSort ys
+--     in
+--       merge' v1 per1 sor1 v2 per2 sor2
+

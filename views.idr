@@ -85,6 +85,10 @@ halves xs with (takeN (div (length xs) 2) xs)
   halves xs | Fewer = ([], xs)
   halves (n_xs ++ rest) | (Exact n_xs) = (n_xs, rest)
 
+-- halves xs with (takeN (div (length xs) 2) xs)
+--   halves xs | Fewer = ([], xs)
+--   halves (n_xs ++ rest) | (Exact n_xs) = (n_xs, rest)
+
 
 data SnocVector : Vect n a -> Type where
   SV0 : SnocVector []
