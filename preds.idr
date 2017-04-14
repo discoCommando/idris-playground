@@ -262,29 +262,26 @@ selectionSort {n = S (S k)} (x :: y :: xs) =
   in
     (m :: sorteda' ** (rewrite prf in per', sortedBTA sor $ btaSubset bta s1))
 
--- equalPlusZeroRight : (x : Nat) -> x = x + 0
+equalPlusZeroRight : (x : Nat) -> x + 0 = x
 
-prfNeeded' : (x : a) -> (xs : Vect n a) -> (ys : Vect j a) -> (zs : Vect i a) -> (ys ++ zs = xs) -> x :: ys ++ zs = x :: xs 
-prfNeeded' x (ys ++ zs) ys zs Refl = Refl
-  
-vectNilLeftNeutral' : (xs : Vect n a) -> xs ++ [] = xs
-vectNilLeftNeutral' [] = Refl 
-vectNilLeftNeutral' (x :: xs) = 
-  let prf = vectNilLeftNeutral' xs in 
-  prfNeeded' x xs xs [] prf
-
-
-prfNeeded : (x : a) -> (xs : Vect n a) -> (ys : Vect j a) -> (zs : Vect i a) -> (xs = ys ++ zs) -> x :: xs = x :: ys ++ zs
+prfNeeded : (x : a) -> (xs : Vect n a) -> (ys : Vect j a) -> (zs : Vect i a) -> (ys ++ zs = xs) -> x :: ys ++ zs = x :: xs 
 prfNeeded x (ys ++ zs) ys zs Refl = Refl
   
-vectNilLeftNeutral : (xs : Vect n a) -> xs = xs ++ []
+vectNilLeftNeutral : (xs : Vect n a) -> xs ++ [] = xs
 vectNilLeftNeutral [] = Refl 
 vectNilLeftNeutral (x :: xs) = 
   let prf = vectNilLeftNeutral xs in 
   prfNeeded x xs xs [] prf
 
-convertPer : Permutation a b -> Permutation (a ++ []) (b ++ [])
-convertPer {a} {b} (Per x y) = Per (rewrite vectNilLeftNeutral' a in (rewrite vectNilLeftNeutral' b in x)) (rewrite vectNilLeftNeutral' a in (rewrite vectNilLeftNeutral' b in y))
+
+-- prfNeeded : (x : a) -> (xs : Vect n a) -> (ys : Vect j a) -> (zs : Vect i a) -> (xs = ys ++ zs) -> x :: xs = x :: ys ++ zs
+-- prfNeeded x (ys ++ zs) ys zs Refl = Refl
+  
+-- vectNilLeftNeutral : (xs : Vect n a) -> xs = xs ++ []
+-- vectNilLeftNeutral [] = Refl 
+-- vectNilLeftNeutral (x :: xs) = 
+--   let prf = vectNilLeftNeutral xs in 
+--   prfNeeded x xs xs [] prf
 
 properRemove : (v : Vect (S n) Nat) -> Elem x v -> (v' : Vect n Nat ** i : Nat ** vi : VectIndex v' i ** WithoutOne v' v x vi) 
 properRemove (x :: xs) Here = (xs ** Z ** BHere ** WHere)
@@ -294,101 +291,339 @@ properRemove (y :: (x :: xs)) (There later) =
   in
   (y :: xs' ** S i ** BThere vi ** WThere wo)
 
+-- data Subsequence : Vect n Nat -> Vect k Nat -> Type where
+--   Sub0 : Subsequence [] a
+--   SubHere : Subsequence xs ys -> Subsequence (x :: xs) (x :: ys)
+--   SubThere : Subsequence xs ys -> Subsequence xs (y :: ys)
 
--- removeTheres : Subset (a :: as) (a :: bs) -> Subset as bs
--- removeTheres (SBR el x) = ?removeTheres_rhs_1
+-- data PerFromSubsequence : Vect n Nat -> Vect n Nat -> Type where 
+--   PerFS : Subsequence a b -> Subsequence b a -> PerFromSubsequence a b
 
--- removeFromSubset : (b' : Vect n Nat) -> (b : Vect (S n) Nat) -> (v : Nat) -> WithoutOne b' b v vi -> Subset (v :: a) b -> Subset a b'
--- -- removeFromSubset {v = v} {a = a} {b = (v :: b2)} {b' = b2} sub@(SBR el x) wo@WHere = 
--- --   let sub' = woSubset wo in 
--- --   ?sadsssasd
--- -- removeFromSubset {b = (y :: b)} {b' = (y :: a)} (SBR el x) (WThere z) = ?removeFromSubset_rhs_3
--- -- removeFromSubset {a=a} {b=(v :: b2)} {b'=b2} v wo@WHere (SBR el x) = 
--- --   let sub' = woSubset wo 
--- --   in ?removeFromSubset_rhs_1
--- -- removeFromSubset {a=a} {b=(y :: ys)} {b'=(y :: xs)} v (WThere z) (SBR el x) = ?removeFromSubset_rhs_2
--- -- removeFromSubset b1 (v :: b1) v WHere (SBR Here x) with (_)
--- --   removeFromSubset b1 (v :: b1) v WHere (SBR Here x) | with_pat = ?removeFromSubset_rhs_1_rhs
--- -- removeFromSubset b1 (v :: b1) v sub@WHere (SBR (There later) x) = ?hole
--- -- removeFromSubset (x :: a) (x :: b) v (WThere z) y = ?removeFromSubset_rhs_2
--- removeFromSubset b1 b v x y with (x)
---   removeFromSubset b1 (v :: b1) v x (SBR el y) | WHere = 
---     let sub' = woSubset x in
---     ?removeFromSubset_rhs_rhs_1
---   removeFromSubset (z :: a) (z :: xs) v x y | (WThere w) = ?removeFromSubset_rhs_rhs_2
+-- ownSubsequence : (v : Vect n Nat) -> Subsequence v v
+-- ownSubsequence [] = Sub0
+-- ownSubsequence (x :: xs) = SubHere $ ownSubsequence xs
 
-removeFromPermutation : Permutation (x :: xs) ys -> WithoutOne ys' ys x vi -> Permutation xs ys'
-removeFromPermutation {xs = xs} {ys = (z :: a)} {ys' = ys2} (Per (SBR el1 x) (SBR el2 w)) y with (y)
-  removeFromPermutation {xs = xs} {ys = (x1 :: a)} {ys' = a} (Per (SBR el1 x) (SBR el2 w)) y | WHere = ?holee_2_rhs_1
-  removeFromPermutation {xs = xs} {ys = (z :: a)} {ys' = (z :: ys)} (Per (SBR el1 x) (SBR el2 w)) y | (WThere s) = ?holee_2_rhs_2
+-- subsequenceCons : (sub1 : Subsequence a b) -> (sub2 : Subsequence b c) -> Subsequence a c 
+-- subsequenceCons {a = []} {b = b} {c = c} Sub0 sub2 = Sub0
+-- subsequenceCons {a = (x :: xs)} {b = (x :: ys)} {c = c} (SubHere y) sub2 with (sub2)
+--   subsequenceCons {a = (x :: xs)} {b = (x :: ys)} {c = (x :: zs)} (SubHere y) sub2 | (SubHere z) = SubHere $ subsequenceCons y z
+--   subsequenceCons {a = (x :: xs)} {b = (x :: ys)} {c = (z :: zs)} (SubHere y) sub2 | (SubThere w) = SubThere $ subsequenceCons (SubHere y) w
+-- subsequenceCons {a = a} {b = (y :: ys)} {c = c} (SubThere x) sub2 with (sub2)
+--   subsequenceCons {a = a} {b = (y :: ys)} {c = (y :: xs)} (SubThere x) sub2 | (SubHere z) = SubThere $ subsequenceCons x z
+--   subsequenceCons {a = a} {b = (y :: ys)} {c = (z :: xs)} (SubThere x) sub2 | (SubThere w) = SubThere $ subsequenceCons (SubThere x) w 
 
-merge' : (v1 : Vect n Nat) -> Permutation v1 a1 -> Sorted v1 ->
-  (v2 : Vect j Nat) -> Permutation v2 a2 -> Sorted v2 ->
-  (v3 : Vect (n + j) Nat ** (Permutation v3 (a1 ++ a2), Sorted v3))
--- merge' [] x y [] z x1 = ([] ** (Per SB0 SB0, Sor0))
--- merge' [] x y (w :: xs) z x1 = ?merge_rhs_4
--- merge' (w :: xs) x y [] z x1 = ?merge_rhs_3
--- merge' (w :: xs) x y (s :: ys) z x1 = ?merge_rhs_4
-merge' {a1 = []} {a2 = a2} [] x y v2 z x1 = (v2 ** (z, x1))
-merge' {a1 = a1} {a2 = []} {n} v1 x y [] z x1 = 
-  ((v1 ++ []) ** (convertPer x, rewrite vectNilLeftNeutral' v1 in y))
-merge' {a1 = w :: []} {a2 = (s :: [])} (w :: []) (Per (SBR Here SB0) (SBR Here SB0)) Sor1 (s :: []) (Per (SBR Here SB0) (SBR Here SB0)) Sor1 =
-  case isBOE w s of 
-    (Yes prf) => 
-      (w :: s :: [] ** (Per (SBR Here (SBR (There Here) SB0)) (SBR Here (SBR (There Here) SB0)), SorR Sor1 prf))
-    (No contra) =>  
-      (s :: w :: [] ** (Per (SBR (There Here) (SBR Here SB0)) (SBR (There Here) (SBR Here SB0)), SorR Sor1 (boeFromContra contra)))
-
--- merge' {a1 = w :: []} {a2 = (g :: gs)} (w :: []) (Per (SBR Here SB0) (SBR Here SB0)) Sor1 (s :: (x :: xs)) (Per sub1 sub2) sor@(SorR y t) = 
---   case isBOE w s of 
---     (Yes prf) => 
---       (w :: s :: x :: xs ** (Per (SBR Here (addThere sub1)) (SBR Here (addThere sub2)), SorR sor prf))
---     (No contra) => 
---       let prf = boeFromContra contra
---       in
---       ?dasds
-
--- merge' {a1 = (t :: zs)} {a2 = (g :: gs)} (w :: (y :: ws)) per@(Per sub1@(SBR el x) sub2@(SBR el' x')) (SorR u v) (s :: ys) z x1 = 
---   case isBOE w s of 
---     (Yes prf) => 
---       let
---       (a1' ** i ** vi ** wo) = properRemove (t :: zs) el 
---       a = merge' {a1 = a1'} (y :: ws) ?asdas u (s :: ys) z x1 in
---       ?sdsd
---     (No contra) => ?ddsd_2
-
--- data Perm : (v : Vect n Nat) -> Type where 
---   Permu : 
-data Subsequence : Vect n Nat -> Vect k Nat -> Type where
-  Sub0 : Subsequence [] a
-  SubHere : Subsequence xs ys -> Subsequence (x :: xs) (x :: ys)
-  SubThere : Subsequence xs ys -> Subsequence xs (y :: ys)
-
-data PerFromSubsequence : Vect n Nat -> Vect n Nat -> Type where 
-  PerFS : Subsequence a b -> Subsequence b a -> PerFromSubsequence a b
-
-ownSubsequence : (v : Vect n Nat) -> Subsequence v v
-ownSubsequence [] = Sub0
-ownSubsequence (x :: xs) = SubHere $ ownSubsequence xs
-
-subsequenceCons : (sub1 : Subsequence a b) -> (sub2 : Subsequence b c) -> Subsequence a c 
-subsequenceCons {a = []} {b = b} {c = c} Sub0 sub2 = Sub0
-subsequenceCons {a = (x :: xs)} {b = (x :: ys)} {c = c} (SubHere y) sub2 with (sub2)
-  subsequenceCons {a = (x :: xs)} {b = (x :: ys)} {c = (x :: zs)} (SubHere y) sub2 | (SubHere z) = SubHere $ subsequenceCons y z
-  subsequenceCons {a = (x :: xs)} {b = (x :: ys)} {c = (z :: zs)} (SubHere y) sub2 | (SubThere w) = SubThere $ subsequenceCons (SubHere y) w
-subsequenceCons {a = a} {b = (y :: ys)} {c = c} (SubThere x) sub2 with (sub2)
-  subsequenceCons {a = a} {b = (y :: ys)} {c = (y :: xs)} (SubThere x) sub2 | (SubHere z) = SubThere $ subsequenceCons x z
-  subsequenceCons {a = a} {b = (y :: ys)} {c = (z :: xs)} (SubThere x) sub2 | (SubThere w) = SubThere $ subsequenceCons (SubThere x) w 
-
+-- merge' : (v1 : Vect n Nat) -> (per1 : PerFromSubsequence v1 a1) -> (sor1 : Sorted v1) ->
+--   (v2 : Vect j Nat) -> (per2 : PerFromSubsequence v2 a2) -> (sor2 : Sorted v2) ->
+--   (v3 : Vect (n + j) Nat ** (PerFromSubsequence v3 (a1 ++ a2), Sorted v3))
+-- -- merge' {a1 = a1} {a2 = a2} v1 per1 sor1 v2 per2 sor2 = ?merge'_rhs
+-- merge' {a1 = []} {a2 = a2} [] per1 sor1 v2 per2 sor2 = --?dds_1
+--   (v2 ** (per2, sor2))
+-- merge' {a1 = a1} {a2 = []} v1 per1 sor1 [] per2 sor2 = (v1 ** (per1, sor1))
+-- merge' {a1 = a1} {a2 = a2} (x :: xs) per1 sor1 (y :: ys) per2 sor2 = ?merge'_rhs_3
 
 -- mergeSort : (a : Vect n Nat) -> (v : Vect n Nat ** (PerFromSubsequence v a, Sorted v))
 -- mergeSort a with (splitRec a)
---   mergeSort [] | SplitRecNil = ([] ** (Per SB0 SB0, Sor0))
---   mergeSort [x] | SplitRecOne = ([x] ** (Per (SBR Here SB0) (SBR Here SB0), Sor1))
+--   mergeSort [] | SplitRecNil = ([] ** (PerFS Sub0 Sub0, Sor0))
+--   mergeSort [x] | SplitRecOne = ([x] ** (PerFS (SubHere Sub0) (SubHere Sub0), Sor1))
 --   mergeSort (xs ++ ys) | (SplitRecPair lrec rrec) =
 --     let
 --       (v1 ** (per1, sor1)) = mergeSort xs
 --       (v2 ** (per2, sor2)) = mergeSort ys
 --     in
 --       merge' v1 per1 sor1 v2 per2 sor2
+
+-- data VectIndex2 : (a : Vect n t) -> (x : Nat) -> Type where
+--   BHere : (a : Vect n t) -> VectIndex a 0
+--   BThere : (a : Vect n t) -> VectIndex a i -> VectIndex (x :: a) (S n)
+
+data WithoutOneSimple : (xxs : Vect (S n) Nat) -> (xs : Vect n Nat) -> (x : Nat) -> (index : Nat) -> Type where 
+  WSHere : WithoutOneSimple (x :: xs) xs x Z
+  WSThere : (wo : WithoutOneSimple xxs xs x index) -> WithoutOneSimple (y :: xxs) (y :: xs) x (S index)
+
+data PermVI : Vect n Nat -> Vect n Nat -> Type where 
+  PVI0 : PermVI [] []
+  PVIR : (b : Vect n Nat) -> (x : Nat) -> (per : PermVI a b) -> (wo : WithoutOneSimple xb b x index) -> PermVI (x :: a) xb
+
+-- getIAndA : (vi : VectIndex a i) -> (a1 : Vect n Nat ** i1 : Nat ** (a1 = a, i1 = i))
+-- getIAndA {a} {i} vi = (a ** i ** (Refl, Refl))
+
+-- getBB1XAndVI : (wo : WithoutOne b b1 x vi) -> (b2 ** b3 ** x1 ** vi1 ** (b2 = b, b3 = b1, x1 = x, vi1 = vi))
+-- getBB1XAndVI {b} {b1} {x} {vi} wo = (b ** b1 ** x ** vi ** (Refl, Refl, Refl, Refl))
+
+-- -- removeVectWO : (a : Vect (S n) Nat) -> (wo : WithoutOne a1 a x vi) -> (a2 : Vect n Nat ** )
+
+-- removeFromPermVI : (per1 : PermVI (x :: a) b) -> (b1 ** i : Nat ** vi : VectIndex b1 i ** (WithoutOne b1 b x vi, PermVI a b1))
+-- removeFromPermVI {b = b} (PVIR per wo) = 
+--   let 
+--     (b1 ** b2 ** x ** vi ** (prf1, prf2, prf3, prf4)) = getBB1XAndVI wo 
+--     (a ** i ** (prf11, prf12)) = getIAndA vi
+--   in
+--   (b1 ** i ** vi ** (rewrite prf1 in (rewrite prf4 in wo), rewrite prf1 in per))
+  -- removeFromPermVI {b = b} a (PVIR per wo) | with_pat {b1 = b1} {vi = vi} = ?hoasd_1_rhs
+-- convertPer : PermVI a b -> PermVI (a ++ []) (b ++ [])
+-- -- convertPer {a} {b} (PVIR x y) = Per (rewrite vectNilLeftNeutral' a in (rewrite vectNilLeftNeutral' b in x)) (rewrite vectNilLeftNeutral' a in (rewrite vectNilLeftNeutral' b in y))
+-- convertPer {a = []} {b = []} PVI0 = PVI0
+-- convertPer {a = (x :: xs)} {b = b} (PVIR per wo) = ?dasdasd
+  -- let wo1 = rewrite vectNilLeftNeutral b in wo in 
+
+-- getSor : Sorted (x :: xs) -> Sorted xs
+-- getSor Sor1 = Sor0
+-- getSor (SorR y z) = y
+
+-- merge' : (v1 : Vect n Nat) -> (per1 : PermVI v1 a1) -> (sor1 : Sorted v1) ->
+--   (v2 : Vect j Nat) -> (per2 : PermVI v2 a2) -> (sor2 : Sorted v2) ->
+--   (v3 : Vect (n + j) Nat ** (PermVI v3 (a1 ++ a2), Sorted v3))
+-- merge' {a1 = []} {a2 = a2} [] PVI0 sor1 v2 per2 sor2 = (v2 ** (per2, sor2))
+-- merge' {n} {a1 = a1} {a2 = []} v1 per1 sor1 [] PVI0 sor2 = (v1 ++ [] ** (convertPer per1, rewrite vectNilLeftNeutral v1 in sor1))
+-- merge' {a1 = (z :: ys)} {a2 = (y :: a)} (x :: []) (PVIR w s) Sor1 (t :: []) (PVIR per wo) Sor1 = ?hole1_1
+-- merge' {a1 = (z :: ys)} {a2 = (y :: a)} (x :: []) (PVIR w s) Sor1 (t :: (u :: xs)) (PVIR per wo) (SorR v x1) = ?hole1_2
+-- merge' {a1 = (z :: ys)} {a2 = (y :: a)} (x :: (u :: ws)) (PVIR w s) (SorR v x1) (t :: zs) (PVIR per wo) sor2 = 
+--   case isBOE x t of
+--     (Yes prf) => 
+--       let (v3 ** (per3, sor3)) = merge' (u :: ws) w v (t :: zs) (PVIR per wo) sor2 in
+--       (x :: v3 ** (?per4, ?sor4))
+--     (No contra) => 
+--       let prf = boeFromContra contra in 
+--       ?holee_2
+
+-- mergeN : (per1 : PermVI v1 a1) -> (sor1 : Sorted v1) ->
+--   (per2 : PermVI v2 a2) -> (sor2 : Sorted v2) ->
+--   (v3 : Vect (n + j) Nat ** (PermVI v3 (a1 ++ a2), Sorted v3))
+-- mergeN {a1 = a1} {a2 = a2} {v1 = []} {v2 = v2} per1 Sor0 per2 sor2 = ?mergeN_rhs_1
+-- mergeN {a1 = a1} {a2 = a2} {v1 = [x]} {v2 = v2} per1 Sor1 per2 sor2 = ?mergeN_rhs_2
+-- mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = []} per1 (SorR z w) per2 Sor0 = ?mergeN_rhs_4
+-- mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = [s]} per1 (SorR z w) per2 Sor1 = ?mergeN_rhs_5
+-- mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = (s :: (t :: ys))} (PVIR per wo) (SorR z w) (PVIR per1 wo1) (SorR u v) = 
+--   case isBOE y s of 
+--     (Yes prf) => 
+--       let (v3 ** (per3, sor3)) = mergeN per z per1 u in
+--       ?isboe_1 
+--     (No contra) => ?isboe_2
+--     -- ?mergeN_rhs_6
+
+-- mergeSort : (a : Vect n Nat) -> (v : Vect n Nat ** (PermVI v a, Sorted v))
+-- mergeSort a with (splitRec a)
+--   mergeSort [] | SplitRecNil = ([] ** (PVI0, Sor0))
+--   mergeSort [x] | SplitRecOne = ([x] ** (PVIR PVI0 WHere, Sor1))
+--   mergeSort (xs ++ ys) | (SplitRecPair lrec rrec) =
+--     let
+--       (v1 ** (per1, sor1)) = mergeSort xs
+--       (v2 ** (per2, sor2)) = mergeSort ys
+--     in
+--       mergeN per1 sor1 per2 sor2
+
+-- viCons : (vi : VectIndex a i) -> (per : PermVI a b) -> (i2 ** VectIndex b i2)
+-- viCons {a = []} {i = Z} {b = []} BHere PVI0 = (_ ** BHere)
+-- viCons {a = (x :: xs)} {i = Z} {b = b} BHere (PVIR b2 per wo) = 
+--   -- let 
+--   --   (_ ** _ ** _ ** vi ** _) = getBB1XAndVI wo 
+--   --   (_ ** i ** _) = getIAndA vi
+--   -- in
+--   (_ ** ?vi)
+-- viCons {a = (x :: xs)} {i = (S k)} {b = b} (BThere y) per = ?viCons_rhs_2
+
+-- -- woCons : WithoutOne a1 (y :: a) x vi -> WithoutOne b2 c y vi2 -> WithoutOne b2 c x vi3
+
+data ElemWI : (x : Nat) -> (xs : Vect n Nat) -> (index : Nat) -> Type where 
+  HereWI : ElemWI x (x :: xs) Z 
+  ThereWI : (elwi : ElemWI x ys i) -> ElemWI x (y :: ys) (S i)
+
+woToElemWI : (yys : Vect (S n) Nat) -> (wo : WithoutOneSimple yys ys y i) -> ElemWI y yys i
+woToElemWI (y :: ys) WSHere = HereWI
+woToElemWI (y :: xxs) (WSThere wo) = ThereWI $ woToElemWI xxs wo  
+
+thereOrNotThere : (elwi : ElemWI x ys i1) -> (wo : WithoutOneSimple yys ys y i2) -> (i ** ElemWI x yys i) 
+thereOrNotThere {x = x} {i1 = i1} {yys = (y :: ys)} {ys = ys} {y = y} {i2 = Z} elwi WSHere with (elwi)
+  thereOrNotThere {x = x} {i1 = Z} {yys = (y :: (x :: xs))} {ys = (x :: xs)} {y = y} {i2 = Z} elwi WSHere | HereWI = (_ ** ThereWI HereWI)
+  thereOrNotThere {x = x} {i1 = (S i)} {yys = (y :: (z :: xs))} {ys = (z :: xs)} {y = y} {i2 = Z} elwi WSHere | (ThereWI w) = (_ ** ThereWI (ThereWI w))
+thereOrNotThere {x = x} {i1 = i1} {yys = (z :: xxs)} {ys = (z :: xs)} {y = y} {i2 = (S index)} elwi (WSThere wo) with (elwi)
+  thereOrNotThere {x = x} {i1 = Z} {yys = (x :: xxs)} {ys = (x :: xs)} {y = y} {i2 = (S index)} elwi (WSThere wo) | HereWI = (_ ** HereWI)
+  thereOrNotThere {x = x} {i1 = (S i)} {yys = (z :: xxs)} {ys = (z :: xs)} {y = y} {i2 = (S index)} elwi (WSThere wo) | (ThereWI w) = 
+    let (_ ** elwi') = thereOrNotThere w wo in
+    (_ ** ThereWI elwi')
+
+elemPerm : (el : ElemWI x xs i) -> (per : PermVI xs ys) -> (i2 : Nat ** ElemWI x ys i2)
+elemPerm {xs = (x :: xs')} {ys} {i = Z} HereWI (PVIR b x per wo) = (_ ** woToElemWI ys wo)
+elemPerm {xs = (y :: xs')} {ys} {x} {i = (S k)} (ThereWI elwi) (PVIR b y per wo) = 
+  let 
+    (_ ** el2) = elemPerm elwi per
+  in
+  thereOrNotThere el2 wo 
+
+properRemoveWOS : (xxs : Vect (S n) Nat) -> (el : ElemWI x xxs i) -> (xs : Vect n Nat ** WithoutOneSimple xxs xs x i)
+properRemoveWOS (x :: xs) HereWI = (xs ** WSHere)
+properRemoveWOS (y :: []) (ThereWI elwi) impossible
+properRemoveWOS (y :: (x :: xs)) (ThereWI elwi) = 
+  let 
+    (xs' ** wo) = properRemoveWOS (x :: xs) elwi
+  in 
+  (y :: xs' ** WSThere wo)
+
+-- elemPerm' : (el : ElemWI y ys i) -> (per : PermVI xs ys) -> (i2 : Nat ** ElemWI y xs i2)
+-- elemPerm' el per = ?elemPerm'_rhs
+
+-- woConsType : (i1 : Nat) -> (i2 : Nat) -> Type
+-- woConsType i1 i2 = 
+--   case isBOE i2 i1 of 
+--     (Yes prf) => ?dsd_1
+--     (No contra) => ?dsd_2
+-- bxy: 0 1 x y 2 3 bx: 0 1 x 2 3 b: 0 1 2 3 iy: 3 ix: 2 by: 01y23 iy':   
+-- woCons : WithoutOneSimple bxy bx y i1 -> WithoutOneSimple bx b x i2 -> (by ** WithoutOneSimple by b y i3 ** WithoutOneSimple bxy by x i4)
+
+
+
+-- woElemWICons : (wo : WithoutOneSimple ax a x ia) -> (per : PermVI ax bx) -> (ib ** b ** WithoutOneSimple bx b x ib)
+-- woElemWICons {ax} {a} {bx} wo per = ?woElemWICons_rhs
+
+-- permReverse : (per : PermVI a b) -> PermVI b a
+-- permReverse {a = []} {b = []} PVI0 = PVI0
+-- permReverse {a = (x :: xs)} {b = (y :: zs)} (PVIR ys x per wo) = 
+--   let 
+--     -- perRev = permReverse per 
+--     ely 
+--   in 
+--     ?permReverse_rhs_2
+
+-- b' ** WithoutOne b' b1 y i10
+
+data VectIndexes : (i1 : Nat) -> (i2 : Nat) -> (remi2 : Nat) -> (remi1 : Nat) -> Type where 
+  V1Here : VectIndexes Z (S x) Z x
+  V2Here : VectIndexes (S x) Z x Z
+  -- VSame : VectIndexes (S Z) (S Z) Z Z
+  VThere : VectIndexes i1 i2 remi2 remi1 -> VectIndexes (S i1) (S i2) (S remi2) (S remi1)
+
+woRefl : (w1 : WithoutOneSimple ax a1 x i) -> (w2 : WithoutOneSimple ax a2 x i) -> a1 = a2
+woRefl {ax} {a1} {a2} {i} w1 w2 with (w1)
+  woRefl {ax = (x :: a1)} {a1 = a1} {a2 = a2} {i = Z} w1 w2 | WSHere with (w2)
+    woRefl {ax = (x :: a1)} {a1 = a1} {a2 = a1} {i = Z} w1 w2 | WSHere | WSHere = Refl
+  woRefl {ax = (y :: xxs)} {a1 = (y :: xs)} {a2 = a2} {i = (S index)} w1 w2 | (WSThere wo) with (w2)
+    woRefl {ax = (y :: xxs)} {a1 = (y :: xs)} {a2 = (y :: ys)} {i = (S index)} w1 w2 | (WSThere wo) | (WSThere x) with (woRefl wo x)
+      woRefl {ax = (y :: xxs)} {a1 = (y :: xs)} {a2 = (y :: xs)} {i = (S index)} w1 w2 | (WSThere wo) | (WSThere x) | Refl = Refl
+
+woCons : (vi : VectIndexes i1 i2 i3 i4) -> 
+  (woxxy : WithoutOneSimple bxy by x i1) -> 
+  (woyxy : WithoutOneSimple bxy bx y i2) -> 
+  (woxx : WithoutOneSimple bx b x i3) -> 
+  WithoutOneSimple by b y i4
+  
+woCons {bxy = bxy}{bx = bx}{by = by}{b = b}{i1 = Z}{i2 = (S i4)}{i3 = Z}{i4 = i4} V1Here woxxy woyxy woxx with (woxxy)
+  woCons {bxy = (x :: by)}{bx = bx}{by = by}{b = b}{i1 = Z}{i2 = (S i4)}{i3 = Z}{i4 = i4} V1Here woxxy woyxy woxx | WSHere with (woyxy)
+    woCons {bxy = (x :: by)}{bx = (x :: xs)}{by = by}{b = b}{i1 = Z}{i2 = (S i4)}{i3 = Z}{i4 = i4} V1Here woxxy woyxy woxx | WSHere | (WSThere wo) with (woxx)
+      woCons {bxy = (x :: by)}{bx = (x :: xs)}{by = by}{b = xs}{i1 = Z}{i2 = (S i4)}{i3 = Z}{i4 = i4} V1Here woxxy woyxy woxx | WSHere | (WSThere wo) | WSHere = wo
+
+woCons {bxy = bxy}{bx = bx}{by = by}{b = b}{i1 = (S i3)}{i2 = Z}{i3 = i3}{i4 = Z} V2Here woxxy woyxy woxx with (woxxy)
+  woCons {bxy = (y :: xxs)}{bx = bx}{by = (y :: xs)}{b = b}{i1 = (S i3)}{i2 = Z}{i3 = i3}{i4 = Z} V2Here woxxy woyxy woxx | (WSThere wo) with (woyxy)
+    woCons {bxy = (y1 :: xxs)}{bx = xxs}{by = (y1 :: xs)}{b = b}{i1 = (S i3)}{i2 = Z}{i3 = i3}{i4 = Z} V2Here woxxy woyxy woxx | (WSThere wo) | WSHere with (woxx)
+      woCons {bxy = (y1 :: (x :: b))}{bx = (x :: b)}{by = (y1 :: xs)}{b = b}{i1 = (S Z)}{i2 = Z}{i3 = Z}{i4 = Z} V2Here woxxy woyxy woxx | (WSThere wo) | WSHere | WSHere = 
+        let prf = woRefl wo woxx in 
+        rewrite prf in WSHere
+      woCons {bxy = (y1 :: (y :: zs))}{bx = (y :: zs)}{by = (y1 :: xs)}{b = (y :: ys)}{i1 = (S (S index))}{i2 = Z}{i3 = (S index)}{i4 = Z} V2Here woxxy woyxy woxx | (WSThere wo) | WSHere | (WSThere x) = 
+        let prf = woRefl wo woxx in 
+        rewrite prf in WSHere
+
+woCons {bxy = bxy}{bx = bx}{by = by}{b = b}{i1 = (S j)}{i2 = (S k)}{i3 = (S remi2)}{i4 = (S remi1)} (VThere x) woxxy woyxy woxx with (woxxy)
+  woCons {bxy = (y :: xxs)}{bx = bx}{by = (y :: xs)}{b = b}{i1 = (S j)}{i2 = (S k)}{i3 = (S remi2)}{i4 = (S remi1)} (VThere x) woxxy woyxy woxx | (WSThere wo) with (woyxy)
+    woCons {bxy = (y :: xxs)}{bx = (y :: ys)}{by = (y :: xs)}{b = b}{i1 = (S j)}{i2 = (S k)}{i3 = (S remi2)}{i4 = (S remi1)} (VThere x) woxxy woyxy woxx | (WSThere wo) | (WSThere z) with (woxx)
+      woCons {bxy = (y :: xxs)}{bx = (y :: ys)}{by = (y :: xs)}{b = (y :: zs)}{i1 = (S j)}{i2 = (S k)}{i3 = (S remi2)}{i4 = (S remi1)} (VThere x) woxxy woyxy woxx | (WSThere wo) | (WSThere z) | (WSThere w) = 
+        let wo' = woCons x wo z w in 
+        WSThere wo'
+
+notEqualContraCons : (i : Nat) -> (j : Nat) -> (S i = S j -> Void) -> i = j -> Void
+notEqualContraCons j j f Refl = f Refl 
+
+getVectIndexes : (i1 : Nat) -> (i2 : Nat) -> (contra : i1 = i2 -> Void) -> (i3 : Nat ** i4 : Nat ** VectIndexes i1 i2 i3 i4)
+getVectIndexes Z Z contra = absurd (contra (Refl))
+getVectIndexes Z (S j) contra = (_ ** _ ** V1Here)
+getVectIndexes (S k) Z contra = (_ ** _ ** V2Here)
+getVectIndexes (S k) (S j) contra = 
+  let (_ ** _ ** vi) = getVectIndexes k j $ notEqualContraCons k j contra in 
+  (_ ** _ ** VThere vi)
+
+notEqualContraCons2 : (i : Nat) -> (j : Nat) -> (S i = S (S j) -> Void) -> i = (S j) -> Void
+notEqualContraCons2 (S j) j f Refl = f Refl 
+
+-- getVectIndexes2 : (i1 : Nat) -> (i4 : Nat) -> (contra : i1 = S i4 -> Void) -> (i2 : Nat ** i3 : Nat ** VectIndexes i1 i2 i3 i4)
+-- getVectIndexes2 Z Z contra = (_ ** _ ** V1Here)
+-- getVectIndexes2 Z (S k) contra = (_ ** _ ** V1Here)
+-- getVectIndexes2 (S Z) Z contra = absurd (contra Refl)
+-- getVectIndexes2 (S (S k)) Z contra = (_ ** _ ** V2Here)
+-- getVectIndexes2 (S k) (S j) contra = 
+--   let (_ ** _ ** vi) = getVectIndexes2 k j $ notEqualContraCons2 k j contra in 
+--   (_ ** _ ** VThere vi)
+
+getVectIndexes2 : (i1 : Nat) -> (i4 : Nat) -> (i2 : Nat ** i3 : Nat ** VectIndexes i1 i2 i3 i4)
+getVectIndexes2 Z Z = (_ ** _ ** V1Here)
+getVectIndexes2 Z (S k) = (_ ** _ ** V1Here)
+getVectIndexes2 (S Z) Z = (_ ** _ ** V2Here)
+getVectIndexes2 (S (S k)) Z = (_ ** _ ** V2Here)
+getVectIndexes2 (S k) (S j) = 
+  let (_ ** _ ** vi) = getVectIndexes2 k j in 
+  (_ ** _ ** VThere vi)
+
+removeUsingWos : (vi : VectIndexes i1 i2 i3 i4) -> WithoutOneSimple axy ay x i1 -> WithoutOneSimple axy ax y i2 -> (a : Vect n Nat ** WithoutOneSimple ax a x i3) 
+removeUsingWos {axy = axy}{ay = ay}{ax = ax}{i1 = Z}{i2 = (S i4)}{x = x}{y = y} V1Here wo1 wo2 with (wo1)
+  removeUsingWos {axy = (x :: ay)}{ay = ay}{ax = ax}{i1 = Z}{i2 = (S i4)}{x = x}{y = y} V1Here wo1 wo2 | WSHere with (wo2)
+    removeUsingWos {axy = (x :: ay)}{ay = ay}{ax = (x :: xs)}{i1 = Z}{i2 = (S i4)}{x = x}{y = y} V1Here wo1 wo2 | WSHere | (WSThere wo) = (xs ** WSHere)
+
+removeUsingWos {axy = axy}{ay = ay}{ax = ax}{i1 = (S i3)}{i2 = Z}{x = x}{y = y} V2Here wo1 wo2 with (wo1)
+  removeUsingWos {axy = (z :: xxs)}{ay = (z :: xs)}{ax = ax}{i1 = (S i3)}{i2 = Z}{x = x}{y = y} V2Here wo1 wo2 | (WSThere wo) with (wo2)
+    removeUsingWos {axy = (z :: xxs)}{ay = (z :: xs)}{ax = xxs}{i1 = (S i3)}{i2 = Z}{x = x}{y = z} V2Here wo1 wo2 | (WSThere wo) | WSHere = (xs ** wo)
+
+removeUsingWos {axy = axy}{ay = ay}{ax = ax}{i1 = (S j)}{i2 = (S k)}{x = x}{y = y} (VThere z) wo1 wo2 with (wo1)
+  removeUsingWos {axy = (w :: xxs)}{ay = (w :: xs)}{ax = ax}{i1 = (S j)}{i2 = (S k)}{x = x}{y = y} (VThere z) wo1 wo2 | (WSThere wo) with (wo2)
+    removeUsingWos {axy = (w :: (x :: []))}{ay = (w :: [])}{ax = (w :: [])}{i1 = (S Z)}{i2 = (S Z)}{x = x}{y = x} (VThere z) wo1 wo2 | (WSThere WSHere) | (WSThere WSHere) impossible
+    removeUsingWos {axy = (w :: (t :: zs))}{ay = (w :: (u :: xs))}{ax = (w :: ys)}{i1 = (S j)}{i2 = (S k)}{x = x}{y = y} (VThere z) wo1 wo2 | (WSThere wo) | (WSThere s) = 
+      let (a' ** wo') = removeUsingWos z wo s in 
+      (w :: a' ** WSThere wo')
+
+removeUsingWos2 : (vi : VectIndexes i1 i2 i3 i4) -> WithoutOneSimple axy ay x i1 -> WithoutOneSimple ay a y i4 -> (ax : Vect (S n) Nat ** WithoutOneSimple axy ax y i2)
+removeUsingWos2 {i1 = Z}{i2 = (S i4)}{i4 = i4} {axy = axy}{ay = ay}{a = a}{x = x} {y = y} V1Here wo1 wo2 with (wo1)
+  removeUsingWos2 {i1 = Z}{i2 = (S i4)}{i4 = i4} {axy = (x :: ay)}{ay = ay}{a = a}{x = x} {y = y} V1Here wo1 wo2 | WSHere with (wo2)
+    removeUsingWos2 {i1 = Z}{i2 = (S Z)}{i4 = Z} {axy = (x :: (y :: a))}{ay = (y :: a)}{a = a}{x = x} {y = y} V1Here wo1 wo2 | WSHere | WSHere = ((x :: a) ** WSThere wo2)
+
+    removeUsingWos2 {i1 = Z}{i2 = (S (S index))}{i4 = (S index)} {axy = (x :: (z :: xxs))}{ay = (z :: xxs)}{a = (z :: xs)}{x = x} {y = y} V1Here wo1 wo2 | WSHere | (WSThere wo) = (x :: (z :: xs) ** WSThere wo2)
+
+removeUsingWos2 {i1 = (S i3)}{i2 = Z}{i4 = Z} {axy = axy}{ay = ay}{a = a}{x = x} {y = y} V2Here wo1 wo2 with (wo1)
+  removeUsingWos2 {i1 = (S i3)}{i2 = Z}{i4 = Z} {axy = (z :: xxs)}{ay = (z :: xs)}{a = a}{x = x} {y = y} V2Here wo1 wo2 | (WSThere wo) with (wo2)
+    removeUsingWos2 {i1 = (S i3)}{i2 = Z}{i4 = Z} {axy = (z :: xxs)}{ay = (z :: xs)}{a = xs}{x = x} {y = z} V2Here wo1 wo2 | (WSThere wo) | WSHere = (xxs ** WSHere)
+
+removeUsingWos2 {i1 = (S j)}{i2 = (S k)}{i4 = (S remi1)} {axy = axy}{ay = ay}{a = a}{x = x} {y = y} (VThere z) wo1 wo2 with (wo1)
+  removeUsingWos2 {i1 = (S j)}{i2 = (S k)}{i4 = (S remi1)} {axy = (w :: xxs)}{ay = (w :: xs)}{a = a}{x = x} {y = y} (VThere z) wo1 wo2 | (WSThere wo) with (wo2)
+    removeUsingWos2 {i1 = (S j)}{i2 = (S k)}{i4 = (S remi1)} {axy = (w :: xxs)}{ay = (w :: xs)}{a = (w :: ys)}{x = x} {y = y} (VThere z) wo1 wo2 | (WSThere wo) | (WSThere s) = 
+      let (ax ** wo') = removeUsingWos2 z wo s in 
+      (w :: ax ** WSThere wo')
+     
+wosDec : (wo1 : WithoutOneSimple axy ay x ia) -> (wo2 : WithoutOneSimple axy ax y ib) -> Dec (ia = ib)
+wosDec {ia} {ib} _ _ = decEq ia ib 
+
+wosDec2 : (wo1 : WithoutOneSimple axy ay x ia) -> (wo2 : WithoutOneSimple ay a y ib) -> Dec (ia = (S ib))
+wosDec2 {ia} {ib} _ _ = decEq ia (S ib) 
+
+wosVectindexes2 : (wo1 : WithoutOneSimple axy ay x i1) -> (wo2 : WithoutOneSimple ay a y i4) -> (i2 : Nat ** i3 : Nat ** VectIndexes i1 i2 i3 i4)
+wosVectindexes2 {i1} {i4} _ _ = getVectIndexes2 i1 i4
+
+reverseVI : VectIndexes i1 i2 i3 i4 -> VectIndexes i2 i1 i4 i3
+reverseVI V1Here = V2Here
+reverseVI V2Here = V1Here
+reverseVI (VThere x) = VThere $ reverseVI x
+
+permRegression : (per : PermVI axy bxy) -> (woa : WithoutOneSimple axy ay x ia) -> (iby : Nat ** by : Vect n Nat ** wo : WithoutOneSimple bxy by x iby ** PermVI ay by)
+permRegression {axy = (x :: ay)} {bxy = bxy} {ay = ay} (PVIR by x per woxby) WSHere = (_ ** _ ** woxby ** per)
+permRegression {axy = (y :: xxs)} {bxy = bxy} {ay = (y :: xs)} {x} {ia = S index} (PVIR bx y per woybx) (WSThere wo) = 
+  let 
+    (ib ** b ** wo' ** per') = permRegression per wo
+    (_ ** _ ** vi) = wosVectindexes2 woybx wo' 
+    (by ** wo'') = removeUsingWos2 vi woybx wo'
+    wo''' = woCons (reverseVI vi) wo'' woybx wo'
+  in 
+    (_ ** by ** wo'' ** PVIR b y per' wo''')
+
+permVICons : (per1 : PermVI a b) -> (per2 : PermVI b c) -> PermVI a c
+permVICons {a = []} {b = []} {c = []} PVI0 PVI0 = PVI0
+permVICons {a = (x :: xs)} {b = (y :: a)} {c = c} (PVIR yawithoutX x per1 wo1) (PVIR cwithoutY y per2 wo2) = 
+  let  '
+    (_ ** cwithoutX ** wo3' ** per'') = permRegression (PVIR cwithoutY y per2 wo2) wo1 
+    pera = permVICons per1 per''
+  in
+  PVIR cwithoutX x pera wo3' 
 
