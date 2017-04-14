@@ -386,31 +386,6 @@ data PermVI : Vect n Nat -> Vect n Nat -> Type where
 --       let prf = boeFromContra contra in 
 --       ?holee_2
 
--- mergeN : (per1 : PermVI v1 a1) -> (sor1 : Sorted v1) ->
---   (per2 : PermVI v2 a2) -> (sor2 : Sorted v2) ->
---   (v3 : Vect (n + j) Nat ** (PermVI v3 (a1 ++ a2), Sorted v3))
--- mergeN {a1 = a1} {a2 = a2} {v1 = []} {v2 = v2} per1 Sor0 per2 sor2 = ?mergeN_rhs_1
--- mergeN {a1 = a1} {a2 = a2} {v1 = [x]} {v2 = v2} per1 Sor1 per2 sor2 = ?mergeN_rhs_2
--- mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = []} per1 (SorR z w) per2 Sor0 = ?mergeN_rhs_4
--- mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = [s]} per1 (SorR z w) per2 Sor1 = ?mergeN_rhs_5
--- mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = (s :: (t :: ys))} (PVIR per wo) (SorR z w) (PVIR per1 wo1) (SorR u v) = 
---   case isBOE y s of 
---     (Yes prf) => 
---       let (v3 ** (per3, sor3)) = mergeN per z per1 u in
---       ?isboe_1 
---     (No contra) => ?isboe_2
---     -- ?mergeN_rhs_6
-
--- mergeSort : (a : Vect n Nat) -> (v : Vect n Nat ** (PermVI v a, Sorted v))
--- mergeSort a with (splitRec a)
---   mergeSort [] | SplitRecNil = ([] ** (PVI0, Sor0))
---   mergeSort [x] | SplitRecOne = ([x] ** (PVIR PVI0 WHere, Sor1))
---   mergeSort (xs ++ ys) | (SplitRecPair lrec rrec) =
---     let
---       (v1 ** (per1, sor1)) = mergeSort xs
---       (v2 ** (per2, sor2)) = mergeSort ys
---     in
---       mergeN per1 sor1 per2 sor2
 
 -- viCons : (vi : VectIndex a i) -> (per : PermVI a b) -> (i2 ** VectIndex b i2)
 -- viCons {a = []} {i = Z} {b = []} BHere PVI0 = (_ ** BHere)
@@ -542,15 +517,6 @@ getVectIndexes (S k) (S j) contra =
 notEqualContraCons2 : (i : Nat) -> (j : Nat) -> (S i = S (S j) -> Void) -> i = (S j) -> Void
 notEqualContraCons2 (S j) j f Refl = f Refl 
 
--- getVectIndexes2 : (i1 : Nat) -> (i4 : Nat) -> (contra : i1 = S i4 -> Void) -> (i2 : Nat ** i3 : Nat ** VectIndexes i1 i2 i3 i4)
--- getVectIndexes2 Z Z contra = (_ ** _ ** V1Here)
--- getVectIndexes2 Z (S k) contra = (_ ** _ ** V1Here)
--- getVectIndexes2 (S Z) Z contra = absurd (contra Refl)
--- getVectIndexes2 (S (S k)) Z contra = (_ ** _ ** V2Here)
--- getVectIndexes2 (S k) (S j) contra = 
---   let (_ ** _ ** vi) = getVectIndexes2 k j $ notEqualContraCons2 k j contra in 
---   (_ ** _ ** VThere vi)
-
 getVectIndexes2 : (i1 : Nat) -> (i4 : Nat) -> (i2 : Nat ** i3 : Nat ** VectIndexes i1 i2 i3 i4)
 getVectIndexes2 Z Z = (_ ** _ ** V1Here)
 getVectIndexes2 Z (S k) = (_ ** _ ** V1Here)
@@ -621,9 +587,36 @@ permRegression {axy = (y :: xxs)} {bxy = bxy} {ay = (y :: xs)} {x} {ia = S index
 permVICons : (per1 : PermVI a b) -> (per2 : PermVI b c) -> PermVI a c
 permVICons {a = []} {b = []} {c = []} PVI0 PVI0 = PVI0
 permVICons {a = (x :: xs)} {b = (y :: a)} {c = c} (PVIR yawithoutX x per1 wo1) (PVIR cwithoutY y per2 wo2) = 
-  let  '
+  let 
     (_ ** cwithoutX ** wo3' ** per'') = permRegression (PVIR cwithoutY y per2 wo2) wo1 
     pera = permVICons per1 per''
   in
   PVIR cwithoutX x pera wo3' 
 
+
+
+mergeN : (per1 : PermVI v1 a1) -> (sor1 : Sorted v1) ->
+  (per2 : PermVI v2 a2) -> (sor2 : Sorted v2) ->
+  (v3 : Vect (n + j) Nat ** (PermVI v3 (a1 ++ a2), Sorted v3))
+mergeN {a1 = a1} {a2 = a2} {v1 = []} {v2 = v2} per1 Sor0 per2 sor2 = ?mergeN_rhs_1
+mergeN {a1 = a1} {a2 = a2} {v1 = [x]} {v2 = v2} per1 Sor1 per2 sor2 = ?mergeN_rhs_2
+mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = []} per1 (SorR z w) per2 Sor0 = ?mergeN_rhs_4
+mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = [s]} per1 (SorR z w) per2 Sor1 = ?mergeN_rhs_5
+mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = (s :: (t :: ys))} (PVIR b1 y per wo) (SorR z w) p2@(PVIR b2 s per1 wo1) s2@(SorR u v) = 
+  case isBOE y s of 
+    (Yes prf) => 
+      let (v3 ** (per3, sor3)) = mergeN per z p2 s2 in
+      (y :: v3 ** (?perx, SorR sor3 prf)) 
+    (No contra) => ?isboe_2
+    -- ?mergeN_rhs_6
+
+mergeSort : (a : Vect n Nat) -> (v : Vect n Nat ** (PermVI v a, Sorted v))
+mergeSort a with (splitRec a)
+  mergeSort [] | SplitRecNil = ([] ** (PVI0, Sor0))
+  mergeSort [x] | SplitRecOne = ([x] ** (PVIR [] x PVI0 WSHere, Sor1))
+  mergeSort (xs ++ ys) | (SplitRecPair lrec rrec) =
+    let
+      (v1 ** (per1, sor1)) = mergeSort xs
+      (v2 ** (per2, sor2)) = mergeSort ys
+    in
+      mergeN per1 sor1 per2 sor2
