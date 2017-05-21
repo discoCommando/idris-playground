@@ -1,3 +1,5 @@
+{-  -}
+
 module Preds
 import Data.Vect
 import Data.Vect.Views
@@ -260,7 +262,7 @@ selectionSort {n = S (S k)} (x :: y :: xs) =
     (a''' ** (per', wo')) = insert (Per s1 s2) m vi
     prf = woOriginalEqual wo wo'
   in
-    (m :: sorteda' ** (rewrite prf in per', sortedBTA sor $ btaSubset bta s1))
+    (m :: sorteda' ** (rewrite prf in per', sortedBTA sor $ btaSubset bta s1))  
 
 equalPlusZeroRight : (x : Nat) -> x + 0 = x
 
@@ -594,29 +596,78 @@ permVICons {a = (x :: xs)} {b = (y :: a)} {c = c} (PVIR yawithoutX x per1 wo1) (
   PVIR cwithoutX x pera wo3' 
 
 
+woConversion : (wo : WithoutOneSimple a1 b1 y index) -> WithoutOneSimple (a1 ++ a2) (b1 ++ a2) y index
+woConversion WSHere = WSHere
+woConversion (WSThere wo) = WSThere $ woConversion wo
 
-mergeN : (per1 : PermVI v1 a1) -> (sor1 : Sorted v1) ->
-  (per2 : PermVI v2 a2) -> (sor2 : Sorted v2) ->
-  (v3 : Vect (n + j) Nat ** (PermVI v3 (a1 ++ a2), Sorted v3))
-mergeN {a1 = a1} {a2 = a2} {v1 = []} {v2 = v2} per1 Sor0 per2 sor2 = ?mergeN_rhs_1
-mergeN {a1 = a1} {a2 = a2} {v1 = [x]} {v2 = v2} per1 Sor1 per2 sor2 = ?mergeN_rhs_2
-mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = []} per1 (SorR z w) per2 Sor0 = ?mergeN_rhs_4
-mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = [s]} per1 (SorR z w) per2 Sor1 = ?mergeN_rhs_5
-mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = (s :: (t :: ys))} (PVIR b1 y per wo) (SorR z w) p2@(PVIR b2 s per1 wo1) s2@(SorR u v) = 
-  case isBOE y s of 
-    (Yes prf) => 
-      let (v3 ** (per3, sor3)) = mergeN per z p2 s2 in
-      (y :: v3 ** (?perx, SorR sor3 prf)) 
-    (No contra) => ?isboe_2
-    -- ?mergeN_rhs_6
+-- Should return (v1 : Vect (S (plus m n)) Nat ** a ++ b = v1)
+-- addVects : (a : Vect m Nat) -> (b : Vect (S n) Nat) -> Vect (S (plus m n)) Nat
+-- addVects {m} {n} a b = rewrite plusSuccRightSucc m n in (a ++ b)
 
-mergeSort : (a : Vect n Nat) -> (v : Vect n Nat ** (PermVI v a, Sorted v))
-mergeSort a with (splitRec a)
-  mergeSort [] | SplitRecNil = ([] ** (PVI0, Sor0))
-  mergeSort [x] | SplitRecOne = ([x] ** (PVIR [] x PVI0 WSHere, Sor1))
-  mergeSort (xs ++ ys) | (SplitRecPair lrec rrec) =
-    let
-      (v1 ** (per1, sor1)) = mergeSort xs
-      (v2 ** (per2, sor2)) = mergeSort ys
-    in
-      mergeN per1 sor1 per2 sor2
+-- woConversionRight : (a2 : Vect n Nat) -> (wo : WithoutOneSimple a1 b1 y index) -> WithoutOneSimple (addVects a2 a1) (a2 ++ b1) y (length a2 + index)
+-- woConversionRight [] wo = wo
+-- woConversionRight (x :: xs) wo = WSThere $ woConversionRight xs wo
+
+concatPrf : (k, i: Nat) -> (S k) + i = k + (S i)
+concatPrf Z Z = Refl
+concatPrf Z (S i) = cong (concatPrf Z i)
+concatPrf (S k) Z = cong (concatPrf k Z)
+concatPrf (S k) (S i) = cong (concatPrf k (S i))
+
+
+concatRev : (a1 : Vect i Nat) -> (a2 : Vect j Nat) -> Vect (j + i) Nat
+concatRev {i = Z} {j = Z} [] [] = []
+concatRev {i = Z} {j = (S len)} [] (x :: xs) = rewrite plusZeroRightNeutral (S len) in (x :: xs)
+concatRev {i = (S len)} {j = Z} (x :: xs) [] = (x :: xs)
+concatRev {i = (S len)} {j = (S k)} (x :: xs) (y :: ys) = x :: (rewrite sym $ concatPrf k len in concatRev xs (y :: ys))
+
+-- concatRevAssociative : (a1 : Vect n Nat) -> (a2 : Vect i Nat) -> (a3 : Vect j Nat) -> concatRev (concatRev a1 a2) a3 = concatRev a1 (concatRev a2 a3)
+-- concatRevAssociative {n} {i} {j} a1 a2 a3 = ?concatRevAssociative_rhs
+
+concatRevPrf0 : (a1 : Vect i Nat) -> concatRev a1 [] = a1
+concatRevPrf0 {i = Z} [] = Refl
+concatRevPrf0 {i = (S len)} (x :: xs) = cong (concatRevPrf0 xs)
+
+concatRevPrf : (a1 : Vect i Nat) -> (a2 : Vect j Nat) -> concatRev a1 a2 = a1 ++ a2
+concatRevPrf {i = Z} {j = Z} [] [] = Refl
+-- concatRevPrf {i = Z} {j = (S len)} [] (x :: xs) = 
+--   let prf = concatRevPrf [x] xs in
+--   ?holee
+-- concatRevPrf {i = (S len)} {j = Z} (x :: xs) [] = cong (concatRevPrf xs [])
+-- concatRevPrf {i = (S len)} {j = (S k)} (x :: xs) (y :: ys) = cong (concatRevPrf xs (y :: ys))
+
+-- permRotation : (a1 : Vect i Nat) -> (a2 : Vect j Nat) -> PermVI (a1 ++ a2) (a2 ++ a1)
+
+
+-- mergeN : (per1 : PermVI v1 a1) -> (sor1 : Sorted v1) ->
+--   (per2 : PermVI v2 a2) -> (sor2 : Sorted v2) ->
+--   (v3 : Vect (n + j) Nat ** (PermVI v3 (a1 ++ a2), Sorted v3))
+  
+-- mergeN {a1 = a1} {a2 = a2} {v1 = []} {v2 = v2} per1 Sor0 per2 sor2 = ?mergeN_rhs_1
+-- mergeN {a1 = a1} {a2 = a2} {v1 = [x]} {v2 = v2} per1 Sor1 per2 sor2 = ?mergeN_rhs_2
+-- mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = []} per1 (SorR z w) per2 Sor0 = ?mergeN_rhs_4
+-- mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = [s]} per1 (SorR z w) per2 Sor1 = ?mergeN_rhs_5
+-- mergeN {a1 = a1} {a2 = a2} {v1 = (y :: (x :: xs))} {v2 = (s :: (t :: ys))} p1@(PVIR b1 y per wo) s1@(SorR z w) p2@(PVIR b2 s per1 wo1) s2@(SorR u v) = 
+--   case isBOE y s of 
+--     (Yes prf) => 
+--       let (v3 ** (per3, sor3)) = mergeN per z p2 s2 in
+--       (y :: v3 ** (PVIR (b1 ++ a2) y per3 (woConversion wo), ?sor)) --SorR sor3 prf
+--     (No contra) =>
+--       let 
+--         (v3 ** (per3, sor3)) = mergeN p1 s1 per1 u 
+--         -- let perRes = rewrite plusSuccRightSucc  
+--       in
+--       ?ddsdds
+--       -- (s :: v3 ** (PVIR (a1 ++ b2) s ?per3 ?wo212, ?sor2)) --SorR sor3 prf
+      
+
+-- mergeSort : (a : Vect n Nat) -> (v : Vect n Nat ** (PermVI v a, Sorted v))
+-- mergeSort a with (splitRec a)
+--   mergeSort [] | SplitRecNil = ([] ** (PVI0, Sor0))
+--   mergeSort [x] | SplitRecOne = ([x] ** (PVIR [] x PVI0 WSHere, Sor1))
+--   mergeSort (xs ++ ys) | (SplitRecPair lrec rrec) =
+--     let
+--       (v1 ** (per1, sor1)) = mergeSort xs
+--       (v2 ** (per2, sor2)) = mergeSort ys
+--     in
+--       mergeN per1 sor1 per2 sor2
