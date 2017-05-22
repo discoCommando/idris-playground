@@ -45,14 +45,49 @@ data StartingPoint : Matrix l a -> Vector -> FinDouble l -> Type where
   SPVUR : StartingPoint m VUR (FD FZ FZ)
   SPVUL : StartingPoint m VUL (FD Data.Fin.last FZ)
 
-test : Matrix 2 Nat 
-test = MR (MR M0 [] [] 4) [3] [2] 1 
+-- test : Matrix 2 Nat 
+-- test = MR (MR M0 [] [] 4) [3] [2] 1 
 
 
-testSPVUL : StartingPoint TicTacToe.test VUL (FD (FS FZ) FZ)
-testSPVUL = SPVUL
-
-startingPointTest : (m : Matrix 2 Nat) -> StartingPoint m v fd -> Nat
-startingPointTest {v} {fd} (MR ms lefts tops first) x = ?startingPointTest_rhs_1
+-- testSPVUL : StartingPoint TicTacToe.test VUL (FD (FS FZ) FZ)
+-- testSPVUL = SPVUL
 
 
+-- is not total, have no idea why
+-- startingPointTest : (m : Matrix 2 Nat) -> StartingPoint m v fd -> Nat
+-- startingPointTest {v = VU} {fd = (FD x FZ)} (MR ms lefts tops first) SPVU = ?startingPointTest_rhs_2
+-- startingPointTest {v = VR} {fd = (FD FZ y)} (MR ms lefts tops first) SPVR = ?startingPointTest_rhs_3
+-- startingPointTest {v = VUR} {fd = (FD FZ FZ)} (MR ms lefts tops first) SPVUR = ?startingPointTest_rhs_4
+-- startingPointTest {v = VUL} {fd = (FD (FS FZ) FZ)} (MR ms lefts tops first) SPVUL = ?startingPointTest_rhs_5
+-- startingPointTest _ _ = ?startingPointTest_rhs_1
+
+nextFinD : (m : Matrix l a) -> (fd : FinDouble l) -> (v : Vector) -> Maybe (FinDouble l)
+nextFinD {l = l} m (FD x y) VU = do
+  y' <- natToFin (S $ finToNat y) l 
+  pure (FD x y') 
+
+nextFinD {l = l} m (FD x y) VR = do
+  x' <- natToFin (S $ finToNat x) l 
+  pure (FD x' y)
+
+nextFinD {l = l} m (FD x y) VUR = do
+  x' <- natToFin (S $ finToNat x) l
+  y' <- natToFin (S $ finToNat y) l
+  pure (FD x' y')
+  
+nextFinD {l = (S k)} m (FD FZ y) VUL = Nothing
+nextFinD {l = (S k)} m (FD (FS x) y) VUL = do 
+  y' <- natToFin (S $ finToNat y) (S k)
+  pure (FD (weaken x) y')
+
+-- line : (m : Matrix l a) -> (fd : FinDouble l) -> (v : Vector) -> (n : Nat ** Vect n a)
+-- line m fd v = 
+--     case nextFinD m fd v of 
+--       Nothing => (_ ** [indexM fd m])
+--       (Just fd') => 
+--         let 
+--           (_ ** v') = line m fd' v 
+--         in 
+--           (_ ** indexM fd m :: v')
+  
+--   
