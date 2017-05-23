@@ -6,28 +6,26 @@ import Data.Fin
 
 %default total
 
-data Matrix : Nat -> Type -> Type where 
-  M0 : Matrix Z a
-  MR : (ms : Matrix x a) -> (lefts : Vect x a) -> (tops : Vect x a) -> (first : a) -> Matrix (S x) a
+data Matrix : Nat -> Nat -> Type -> Type where 
+  M0 : Matrix Z Z a
+  MX : Vect (S m) (Vect (S n) a) -> Matrix (S n) (S m) a 
 
-data FinDouble : Nat -> Type where 
-  FD : (x : Fin k) -> (y : Fin k) -> FinDouble k
+data FinDouble : Nat -> Nat -> Type where 
+  FD : (x : Fin k) -> (y : Fin j) -> FinDouble k j
 
-indexM : FinDouble l -> Matrix l a -> a 
-indexM (FD FZ FZ) (MR ms lefts tops first) = first
-indexM (FD FZ (FS y)) (MR ms lefts tops first) = index y lefts
-indexM (FD (FS x) FZ) (MR ms lefts tops first) = index x tops
-indexM (FD (FS x) (FS y)) (MR ms lefts tops first) = indexM (FD x y) ms
+indexM : FinDouble n m -> Matrix n m a -> a 
+indexM {n = Z} {m = Z} (FD FZ _) M0 impossible
+indexM {n = Z} {m = Z} (FD (FS _) _) M0 impossible
+indexM (FD x y) (MX xs) = index x (index y xs)
 
-updateAtM : (i : FinDouble l) -> (f : elem -> elem) -> (xs : Matrix l elem) -> Matrix l elem
-updateAtM (FD FZ FZ) f (MR ms lefts tops first) = (MR ms lefts tops $ f first)
-updateAtM (FD FZ (FS y)) f (MR ms lefts tops first) = (MR ms (updateAt y f lefts) tops first)
-updateAtM (FD (FS x) FZ) f (MR ms lefts tops first) = (MR ms lefts (updateAt x f tops) first)
-updateAtM (FD (FS x) (FS y)) f (MR ms lefts tops first) = (MR (updateAtM (FD x y) f ms) lefts tops first)
+updateAtM : (i : FinDouble n m) -> (f : elem -> elem) -> (xs : Matrix n m elem) -> Matrix n m elem
+updateAtM {n = Z} {m = Z} (FD FZ _) _ M0 impossible
+updateAtM {n = Z} {m = Z} (FD (FS _) _) _ M0 impossible
+updateAtM {n = (S j)} {m = (S k)} (FD x y) f (MX xs) = MX $ updateAt y (\ys => updateAt x f ys) xs 
 
-mapMatrix : (f : elem1 -> elem2) -> (xs : Matrix l elem1) -> Matrix l elem2
-mapMatrix f M0 = M0
-mapMatrix f (MR ms lefts tops first) = MR (mapMatrix f ms) (map f lefts) (map f tops) (f first)
+mapMatrix : (f : elem1 -> elem2) -> (xs : Matrix n m elem1) -> Matrix n m elem2
+mapMatrix {n = Z} {m = Z} f M0 = M0
+mapMatrix {n = (S j)} {m = (S k)} f (MX xs) = MX $ map (map f) xs
 
 data Vector 
   = VU
@@ -35,59 +33,57 @@ data Vector
   | VUR 
   | VUL 
 
-sizeM : Matrix (S l) a -> Fin (S l)
-sizeM (MR ms lefts tops first) = last
+nextFinD : (m : Matrix i j a) -> (fd : FinDouble i j) -> (v : Vector) -> Maybe (FinDouble i j)
+nextFinD {i = Z} {j = Z} M0 (FD FZ _) _ impossible
+nextFinD {i = Z} {j = Z} M0 (FD (FS _) _) _ impossible
+nextFinD {i = (S n)} {j = (S m)} (MX xs) (FD x y) VU = do 
+  y' <- natToFin (S $ finToNat y) (S m)
+  pure (FD x y')
 
-
-data StartingPoint : Matrix l a -> Vector -> FinDouble l -> Type where
-  SPVU : StartingPoint m VU (FD x FZ)
-  SPVR : StartingPoint m VR (FD FZ y)
-  SPVUR : StartingPoint m VUR (FD FZ FZ)
-  SPVUL : StartingPoint m VUL (FD Data.Fin.last FZ)
-
--- test : Matrix 2 Nat 
--- test = MR (MR M0 [] [] 4) [3] [2] 1 
-
-
--- testSPVUL : StartingPoint TicTacToe.test VUL (FD (FS FZ) FZ)
--- testSPVUL = SPVUL
-
-
--- is not total, have no idea why
--- startingPointTest : (m : Matrix 2 Nat) -> StartingPoint m v fd -> Nat
--- startingPointTest {v = VU} {fd = (FD x FZ)} (MR ms lefts tops first) SPVU = ?startingPointTest_rhs_2
--- startingPointTest {v = VR} {fd = (FD FZ y)} (MR ms lefts tops first) SPVR = ?startingPointTest_rhs_3
--- startingPointTest {v = VUR} {fd = (FD FZ FZ)} (MR ms lefts tops first) SPVUR = ?startingPointTest_rhs_4
--- startingPointTest {v = VUL} {fd = (FD (FS FZ) FZ)} (MR ms lefts tops first) SPVUL = ?startingPointTest_rhs_5
--- startingPointTest _ _ = ?startingPointTest_rhs_1
-
-nextFinD : (m : Matrix l a) -> (fd : FinDouble l) -> (v : Vector) -> Maybe (FinDouble l)
-nextFinD {l = l} m (FD x y) VU = do
-  y' <- natToFin (S $ finToNat y) l 
-  pure (FD x y') 
-
-nextFinD {l = l} m (FD x y) VR = do
-  x' <- natToFin (S $ finToNat x) l 
+nextFinD {i = (S n)} {j = (S m)} (MX xs) (FD x y) VR = do 
+  x' <- natToFin (S $ finToNat x) (S n)
   pure (FD x' y)
 
-nextFinD {l = l} m (FD x y) VUR = do
-  x' <- natToFin (S $ finToNat x) l
-  y' <- natToFin (S $ finToNat y) l
+nextFinD {i = (S n)} {j = (S m)} (MX xs) (FD x y) VUR = do 
+  x' <- natToFin (S $ finToNat x) (S n)
+  y' <- natToFin (S $ finToNat y) (S m)
   pure (FD x' y')
-  
-nextFinD {l = (S k)} m (FD FZ y) VUL = Nothing
-nextFinD {l = (S k)} m (FD (FS x) y) VUL = do 
-  y' <- natToFin (S $ finToNat y) (S k)
+
+nextFinD {i = (S n)} {j = (S m)} (MX xs) (FD FZ y) VUL = Nothing
+nextFinD {i = (S n)} {j = (S m)} (MX xs) (FD (FS x) y) VUL = do 
+  y' <- natToFin (S $ finToNat y) (S m)
   pure (FD (weaken x) y')
 
--- line : (m : Matrix l a) -> (fd : FinDouble l) -> (v : Vector) -> (n : Nat ** Vect n a)
--- line m fd v = 
---     case nextFinD m fd v of 
---       Nothing => (_ ** [indexM fd m])
---       (Just fd') => 
---         let 
---           (_ ** v') = line m fd' v 
---         in 
---           (_ ** indexM fd m :: v')
-  
---   
+
+-- ATTENTION!!!
+-- THIS IS : 
+--  _____ 
+-- |1 2 3|
+-- |4 5 6|
+-- |7_8_9|
+
+testMatrix3x3 : Matrix 3 3 Nat 
+testMatrix3x3 = MX $ [[7, 8, 9], [4, 5 ,6], [1, 2, 3]]
+
+data Fuel = Empty | NonEmpty (Lazy Fuel)
+
+
+lineHelper : (fuel : Fuel) -> (m : Matrix i j a) -> (fd : FinDouble i j) -> (v : Vector) -> (n : Nat ** Vect n a)
+lineHelper Empty m fd v = (_ ** [])
+lineHelper {i = Z} {j = Z} fuel M0 (FD FZ _) _ impossible
+lineHelper {i = Z} {j = Z} fuel M0 (FD (FS _) _) _ impossible
+lineHelper {i = (S n)} {j = (S m)} (NonEmpty fuel) (MX xs) (FD x y) v = 
+  case nextFinD (MX xs) (FD x y) v of 
+    Nothing => (_ ** [indexM (FD x y) (MX xs)])
+    (Just fd') => 
+      let 
+        (_ ** v') = lineHelper fuel (MX xs) fd' v
+      in 
+        (_ ** indexM (FD x y) (MX xs) :: v')
+
+natToFuel : Nat -> Fuel 
+natToFuel Z = Empty
+natToFuel (S k) = NonEmpty $ natToFuel k
+
+line : (m : Matrix i j a) -> (fd : FinDouble i j) -> (v : Vector) -> (n : Nat ** Vect n a)
+line {i} {j} m fd v = lineHelper (natToFuel $ max i j) m fd v
