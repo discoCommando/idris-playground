@@ -114,38 +114,6 @@ getFromNotEmpty fd m f with (indexM fd m)
   getFromNotEmpty fd m f | Nothing = absurd $ f Refl
   getFromNotEmpty fd m f | (Just x) = x 
 
--- data TicTacToeCmd : (ty : Type) -> (b : Board 3 3) -> (ty -> Board 3 3) -> Type where 
---   -- Pure : a -> TicTacToeCmd a b boardFn
---   (>>=) : TicTacToeCmd a b1 fn1 -> ((res: a) -> TicTacToeCmd b (fn1 res) fn2) -> TicTacToeCmd b b1 fn2 
---   Insert : TicTacToeCmd (fd : FinDouble 3 3 ** x : Field ** FieldEmpty fd b) b TicTacToe.insertHelper   
---   PutStr : String -> TicTacToeCmd () b (const b)
-
--- emptyBoard : Board 3 3 
--- emptyBoard = MX [[Nothing, Nothing, Nothing], [Nothing, Nothing, Nothing], [Nothing, Nothing, Nothing]]
-
--- insertedBoard : Board 3 3
--- insertedBoard = MX [[Nothing, Nothing, Nothing], [Nothing, Nothing, Nothing], [Just Circle, Nothing, Nothing]]
-
-
--- testCmd : TicTacToeCmd () TicTacToe.emptyBoard (const TicTacToe.emptyBoard)
--- testCmd = do
---   PutStr "dupa"
---   PutStr "a"
-
--- runTicTacToeCmd 
-
-
--- data BoardM : (benter : Board 3 3) -> (bexit : Board 3 3) -> (ty : Type) -> Type where
---   (>>=) : BoardM b1 b2 ty1 -> (ty1 -> BoardM b2 b3 ty2) -> BoardM b1 b3 ty2
---   Insert : (fd : FinDouble 3 3) -> (prf : FieldEmpty fd b) -> (field : Field) -> BoardM b (insertToEmpty fd b prf field) ()
---   Get : BoardM b b (Board 3 3)
---   PutStr : String -> BoardM b b ()
-
--- testBoardM : BoardM TicTacToe.emptyBoard TicTacToe.insertedBoard () 
--- testBoardM = 
-
-
-
 interface BoardIface (t : Type) (fieldType : Type) (i : Nat) (j : Nat) where 
   indexB : (fd : FinDouble i j) -> t -> Maybe fieldType
   insertAtB : (fd : FinDouble i j) -> (b : t) -> (f : fieldType) -> (indexB fd b = Nothing) -> t
@@ -155,18 +123,6 @@ BoardIface (Matrix i j (Maybe Field)) Field i j where
   insertAtB {i = Z} {j = Z} (FD FZ _) M0 _ _ impossible
   insertAtB {i = Z} {j = Z} (FD (FS _) _) M0 _ _ impossible
   insertAtB {i = (S n)} {j = (S m)} (FD x y) (MX xs) f prf = updateAtM (FD x y) (const $ Just f) (MX xs)  
-
--- printBoard : (Show field, BoardIface t field i j) => t -> String 
--- printBoard {i = S k} {j = S l} x = printHelp (last {n = S k}) (last {n = S l}) x where 
---   printHelp FZ FZ x = show $ indexB (FD FZ FZ) x
---   printHelp FZ (FS y) x = ?hole_4
---   printHelp (FS y) FZ x = ?hole_1
---   printHelp (FS y) (FS z) x = ?hole_5
-
-
-
-
--- data Board : (i : Nat) -> (j : Nat) -> (fieldType : Type) -> Type where 
 
 nextTurn : Field -> Field 
 nextTurn Cross = Circle
@@ -191,6 +147,7 @@ data Command : Type -> Type where
   GetBoard : Command DefaultBoard
   GetTurn : Command Field
   TryInsert : FinDoubleDefault -> Command (Maybe Field)  -- returns just field if there is field already. Nothing if inserted correctly 
+  NextTurn : Command ()
 
   Pure : ty -> Command ty 
   Bind : Command ty1 -> (ty1 -> Command ty2) -> Command ty2
@@ -234,6 +191,8 @@ runCommand gs (TryInsert fd) = do
 
   newBoard <- pure $ insertToEmpty fd (board gs) prf (turn gs)
   pure (Nothing, record {board = newBoard} gs)
+
+runCommand gs NextTurn = pure ((), record {turn = nextTurn $ turn gs} gs)
 
 run : Fuel -> GameState -> ConsoleIO a -> IO (Maybe a, GameState)
 run Empty gs _ = pure (Nothing, gs)
@@ -285,7 +244,7 @@ findWinningLineHelper (NonEmpty fuel) b field fd v =
     (Yes prf) => Just $ (fd ** v ** prf)
     (No contra) => case fd of 
       (FD FZ FZ) => Nothing
-      (FD FZ (FS y)) => findWinningLineHelper fuel b field (FD FZ $ weaken y) v
+      (FD FZ (FS y)) => findWinningLineHelper fuel b field (FD last $ weaken y) v
       (FD (FS x) y) => findWinningLineHelper fuel b field (FD (weaken x) y) v
 findWinningLineHelper Empty _ _ _ _ = Nothing
   
@@ -307,20 +266,119 @@ findWinningLine b field =
       , Delay $ findWinningLineHelper fuel b field maxFd VUL
       ] 
 
+findWinningLineM : Command (Maybe (FinDouble 3 3, Vector))
+findWinningLineM = do 
+  board <- GetBoard 
+  field <- GetTurn 
+  Just (fd ** vector ** _) <- Pure $ findWinningLine board field
+    | Nothing => Pure Nothing
+  Pure $ Just (fd, vector)
+
+checkIfDraw : (b : DefaultBoard) -> Bool
+checkIfDraw (MX (x :: xs)) = helper (x :: xs) where 
+  helper : Vect n (Vect m (Maybe a)) -> Bool
+  helper [] = True
+  helper (y :: ys) = all isJust y && helper ys
+
 Show Field where 
-  show Cross = "O"
-  show Circle = "X"
+  show Cross = "o"
+  show Circle = "x"
 
 Show DefaultBoard where 
-  show m = "Hell"
+  show (MX (x :: xs)) = print' (x :: xs) where 
+    print' : Show a => Vect n (Vect m (Maybe a)) -> String
+    print' [] = ""
+    print' (x :: xs) = print' xs ++ show' x ++ "\n" where 
+      show' : Show a => Vect m (Maybe a) -> String
+      show' [] = "" 
+      show' (Just x :: xs) = show x ++ show' xs
+      show' (Nothing :: xs) = "-" ++ show' xs
 
+Show Vector where 
+  show VU = "Up"
+  show VR = "Right"
+  show VUR = "Up Right"
+  show VUL = "Up Left"
+
+Show (Fin i) where 
+  show f = show $ S $ finToNat f 
+
+Show (FinDouble i j) where 
+  show (FD x y) = 
+    "(" ++
+    show x ++
+    ", " ++
+    show y ++
+    ")"
+    
+
+data Answer = Exit | Insert Nat Nat | Unknown
+
+parseInput : String -> Answer
+parseInput "quit" = Exit
+parseInput "exit" = Exit
+parseInput "q" = Exit
+parseInput a = case (unpack a) of
+  (x :: (' ' :: (y :: []))) => 
+    if isDigit x && isDigit y 
+    then 
+      if (cast $ cast {to = String} x) > Z && (cast $ cast {to = String} y) > Z 
+      then Insert (minus (cast $ cast {to = String} x) 1) (minus (cast $ cast {to = String} y)   1)
+      else Unknown
+    else Unknown
+
+  _ => Unknown
+
+readInput : Command Answer
+readInput = do 
+  line <- GetLine
+  Pure $ parseInput line 
+
+natsToFinD : (x : Nat) -> (y : Nat) -> (i : Nat) -> (j : Nat) -> Maybe (FinDouble i j)
+natsToFinD x y i j = do 
+  fin1 <- natToFin x i
+  fin2 <- natToFin y j
+  pure $ FD fin1 fin2
 
 ticTacToe : ConsoleIO GameState
 ticTacToe = do
   gs <- GetGameState
+  PutStr $ "----------------\n"
   PutStr $ show (board gs) 
   PutStr $ "Turn: " ++ show (turn gs)
-  Quit gs
+  answer <- readInput
+  case answer of 
+    Exit => Quit gs
+    Unknown => do 
+      PutStr $ "Incorrect input"
+      ticTacToe
+    (Insert k j) => do 
+      Just fd <- Pure $ natsToFinD k j 3 3
+        | _ => do 
+          PutStr "Out of bounds"
+          ticTacToe
+      Nothing <- TryInsert fd
+        | (Just field) => do 
+          PutStr $ "Field already there: " ++ show field
+          ticTacToe
+      gs' <- GetGameState
+      isWin <- findWinningLineM
+      case isWin of 
+        Nothing => do 
+          False <- Pure $ checkIfDraw (board gs')
+            | True => do 
+              PutStr $ "DRAW!"
+              Quit gs'
+          NextTurn
+          ticTacToe
+        (Just (fd', vector)) => do 
+          PutStr $ show (board gs')
+          PutStr $ show (turn gs') ++ " won in " ++ show fd' ++ " for direction " ++ show vector 
+          Quit gs'
+
+      
+
+  -- Quit gs
 
 emptyBoard : DefaultBoard
 emptyBoard = MX [[Nothing, Nothing, Nothing], [Nothing, Nothing, Nothing], [Nothing, Nothing, Nothing]]
