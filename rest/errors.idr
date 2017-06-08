@@ -22,6 +22,19 @@ fun : Vect n Nat -> Nat
 fun Empty = ?fun_rhs_1
 fun (Cons x y) = ?fun_rhs_2
 
+
+data Maybe a = Nothing | Just a 
+
+data Maybe : Type -> Type where 
+	Nothing : Maybe a 
+	Just : a -> Maybe a 
+
+data ProofThatNotEmpty : List x -> Type where 
+	Prf : ProofThatNotEmpty (x :: xs) 
+
+
+head : (list : List x) -> (prf : ProofThatNotEmpty list) -> x 
+
 -- test : Vect Z t -> t 
 -- test vect = fun vect
 
