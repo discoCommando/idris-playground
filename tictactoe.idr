@@ -367,6 +367,7 @@ ticTacToe = do
         Nothing => do 
           False <- Pure $ checkIfDraw (board gs')
             | True => do 
+              PutStr $ show (board gs')
               PutStr $ "DRAW!"
               Quit gs'
           NextTurn
